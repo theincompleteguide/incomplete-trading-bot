@@ -93,13 +93,13 @@ class Aggsv2(list):
 
     def rename_keys(self):
         colmap = {
-                "o": "open",
-                "h": "high",
-                "l": "low",
-                "c": "close",
-                "v": "volume",
-                "t": "timestamp",
-            }
+            "o": "open",
+            "h": "high",
+            "l": "low",
+            "c": "close",
+            "v": "volume",
+            "t": "timestamp",
+        }
 
         return [
             {colmap.get(k, k): v for k, v in tick.items()}
@@ -314,3 +314,44 @@ class NewsList(EntityList):
 
 class Ticker(Entity):
     pass
+
+
+class DailyOpenClose(Entity):
+    pass
+
+
+trade_mapping = {
+    "sym": "symbol",
+    "c": "conditions",
+    "x": "exchange",
+    "p": "price",
+    "s": "size",
+    "t": "timestamp"
+}
+
+quote_mapping = {
+    "sym": "symbol",
+    "ax": "askexchange",
+    "ap": "askprice",
+    "as": "asksize",
+    "bx": "bidexchange",
+    "bp": "bidprice",
+    "bs": "bidsize",
+    "c": "condition",
+    "t": "timestamp"
+}
+
+agg_mapping = {
+    "sym": "symbol",
+    "o": "open",
+    "c": "close",
+    "h": "high",
+    "l": "low",
+    "a": "average",
+    "x": "exchange",
+    "v": "volume",
+    "s": "start",
+    "e": "end",
+    "vw": "vwap",
+    "av": "totalvolume",
+}

@@ -16,8 +16,8 @@ stopLossMargin = 0.05 # extra margin for the stop loss
 operEquity = 10000 # defines the target amount per execution
 limitOrderMargin = 0.1# defines the offset for the limit orders
 
-API_KEY = "PKC6UVEMBE24NAPGX1CQ"
-API_SECRET_KEY = "3uySRB1FHjlcZn5XCc0mfdvJ765QK2l96nvoWTC1"
+API_KEY = ""
+API_SECRET_KEY = ""
 ALPACA_API_URL = "https://paper-api.alpaca.markets"
 
 if API_KEY is "" or API_SECRET_KEY is "":
