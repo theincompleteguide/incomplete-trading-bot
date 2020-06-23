@@ -12,10 +12,8 @@ from .common import (
 from .entity import (
     Account, AccountConfigurations, AccountActivity,
     Asset, Order, Position, BarSet, Clock, Calendar,
-    Aggs, Trade, Quote, Watchlist, PortfolioHistory
 )
 from . import polygon
-from . import alpha_vantage
 
 logger = logging.getLogger(__name__)
 
@@ -75,7 +73,6 @@ class REST(object):
             'APCA_RETRY_CODES', '429,504').split(',')]
         self.polygon = polygon.REST(
             self._key_id, 'staging' in self._base_url)
-        self.alpha_vantage = alpha_vantage.REST(self._key_id)
 
     def _request(
         self,
@@ -197,7 +194,7 @@ class REST(object):
         return AccountConfigurations(resp)
 
     def list_orders(self, status=None, limit=None, after=None, until=None,
-                    direction=None, params=None, nested=None):
+                    direction=None, params=None):
         '''
         Get a list of orders
         https://docs.alpaca.markets/web-api/orders/#get-a-list-of-orders
@@ -214,16 +211,12 @@ class REST(object):
             params['direction'] = direction
         if status is not None:
             params['status'] = status
-        if nested is not None:
-            params['nested'] = nested
-        url = '/orders'
-        resp = self.get(url, params)
+        resp = self.get('/orders', params)
         return [Order(o) for o in resp]
 
     def submit_order(self, symbol, qty, side, type, time_in_force,
                      limit_price=None, stop_price=None, client_order_id=None,
-                     extended_hours=None, order_class=None,
-                     take_profit=None, stop_loss=None):
+                     extended_hours=None):
         '''Request a new order'''
         params = {
             'symbol': symbol,
@@ -240,27 +233,19 @@ class REST(object):
             params['client_order_id'] = client_order_id
         if extended_hours is not None:
             params['extended_hours'] = extended_hours
-        if order_class is not None:
-            params['order_class'] = order_class
-        if take_profit is not None:
-            params['take_profit'] = take_profit
-        if stop_loss is not None:
-            params['stop_loss'] = stop_loss
         resp = self.post('/orders', params)
         return Order(resp)
 
     def get_order_by_client_order_id(self, client_order_id):
         '''Get an order by client order id'''
-        params = {
+        resp = self.get('/orders:by_client_order_id', {
             'client_order_id': client_order_id,
-        }
-        resp = self.get('/orders:by_client_order_id', params)
+        })
         return Order(resp)
 
     def get_order(self, order_id):
         '''Get an order'''
-        params = {}
-        resp = self.get('/orders/{}'.format(order_id), params)
+        resp = self.get('/orders/{}'.format(order_id))
         return Order(resp)
 
     def replace_order(
@@ -306,13 +291,11 @@ class REST(object):
 
     def close_position(self, symbol):
         '''Liquidates the position for the given symbol at market price'''
-        resp = self.delete('/positions/{}'.format(symbol))
-        return Order(resp)
+        self.delete('/positions/{}'.format(symbol))
 
     def close_all_positions(self):
         '''Liquidates all open positions at market price'''
-        resp = self.delete('/positions')
-        return [Order(o) for o in resp]
+        self.delete('/positions')
 
     def list_assets(self, status=None, asset_class=None):
         '''Get a list of assets'''
@@ -359,22 +342,6 @@ class REST(object):
         resp = self.data_get('/bars/{}'.format(timeframe), params)
         return BarSet(resp)
 
-    def get_aggs(self, symbol, multiplier, timespan, _from, to):
-        resp = self.data_get('/aggs/ticker/{}/range/{}/{}/{}/{}'.format(
-            symbol, multiplier, timespan, _from, to
-        ))
-        return Aggs(resp)
-
-    def get_last_trade(self, symbol):
-        '''Get the last trade for the given symbol'''
-        resp = self.data_get('/last/stocks/{}'.format(symbol))
-        return Trade(resp['last'])
-
-    def get_last_quote(self, symbol):
-        '''Get the last trade for the given symbol'''
-        resp = self.data_get('/last_quote/stocks/{}'.format(symbol))
-        return Quote(resp['last'])
-
     def get_clock(self):
         resp = self.get('/clock')
         return Clock(resp)
@@ -418,64 +385,3 @@ class REST(object):
             params['end'] = end
         resp = self.get('/calendar', data=params)
         return [Calendar(o) for o in resp]
-
-    def get_watchlists(self):
-        resp = self.get('/watchlists')
-        return [Watchlist(o) for o in resp]
-
-    def get_watchlist(self, watchlist_id):
-        resp = self.get('/watchlists/{}'.format((watchlist_id)))
-        return Watchlist(resp)
-
-    def add_watchlist(self, watchlist_name):
-        resp = self.post('/watchlists', data=dict(name=watchlist_name))
-        return [Watchlist(o) for o in resp]
-
-    def add_to_watchlist(self, watchlist_id, symbol):
-        resp = self.post(
-            '/watchlists/{}'.format(watchlist_id), data=dict(symbol=symbol)
-        )
-        return Watchlist(resp)
-
-    def update_watchlist(self, watchlist_id, name=None, symbols=None):
-        params = {}
-        if name is not None:
-            params['name'] = name
-        if symbols is not None:
-            params['symbols'] = symbols
-        resp = self.patch('/watchlists/{}'.format(watchlist_id), data=params)
-        return Watchlist(resp)
-
-    def delete_watchlist(self, watchlist_id):
-        self.delete('/watchlists/{}'.format(watchlist_id))
-
-    def delete_from_watchlist(self, watchlist_id, symbol):
-        self.delete('/watchlists/{}/{}'.format(watchlist_id, symbol))
-
-    def get_portfolio_history(
-        self, date_start=None, date_end=None, period=None,
-        timeframe=None, extended_hours=None
-    ):
-        params = {}
-        if date_start is not None:
-            params['date_start'] = date_start
-        if date_end is not None:
-            params['date_end'] = date_end
-        if period is not None:
-            params['period'] = period
-        if timeframe is not None:
-            params['timeframe'] = timeframe
-        if extended_hours is not None:
-            params['extended_hours'] = extended_hours
-        return PortfolioHistory(
-            self.get('/account/portfolio/history', data=params)
-        )
-
-    def __enter__(self):
-        return self
-
-    def close(self):
-        self._session.close()
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        self.close()
