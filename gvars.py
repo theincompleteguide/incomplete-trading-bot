@@ -16,6 +16,7 @@ stopLossMargin = 0.05 # extra margin for the stop loss
 operEquity = 10000 # defines the target amount per execution
 limitOrderMargin = 0.1# defines the offset for the limit orders
 
+# YOUR API KEYS AT ALPACA GO HERE!
 API_KEY = ""
 API_SECRET_KEY = ""
 ALPACA_API_URL = "https://paper-api.alpaca.markets"
@@ -55,20 +56,20 @@ timeouts = {
         'GT':0 # if 0, it discards a bad general trend instantly
         }
 
-# temps d'espera per a cada iteració
+# waiting time for each iteration
 sleepTimes = {
                 'operation':60,
                 'GT': 10*60, # general trend
                 'IT': 2*60, # instant trend
                 'RS': 60, # RSI
                 'FA': 3, # fetch assets
-                'ST': 60, # stochastic cada minut
-                'CO': 10, # check order cada 10 segons
-                'SO': 5, # submit order cada 5 segons
+                'ST': 60, # stochastic every minut
+                'CO': 10, # check order every 10 secons
+                'SO': 5, # submit order every 5 secons
                 'LH': 5, # load_historical_data
                 'PF': 10, # price fetch (current price)
-                'CP': 10, # check position, a veure si ha entrat
-                'GS': 60, # get slope dins d'enter position
+                'CP': 10, # check position, to check if it entered
+                'GS': 60, # get slope inside enter position
                 'UA': 10*60, # unlock assets
                 'CL': 2
                 }
@@ -83,6 +84,6 @@ LOGS_PATH = FILES_FOLDER + 'logs/'
 ################################################################ ASSET PARAMS ->
 # filtering parameters at the asset handler
 filterParams = {
-    'MIN_SHARE_PRICE':30, #dòlars
-    'MIN_AVG_VOL':0.5, #milions de dòlars
+    'MIN_SHARE_PRICE':30, #dollars
+    'MIN_AVG_VOL':0.5, #millions of dollars
     }
