@@ -1,9 +1,8 @@
 # encoding: utf-8
 
 # This code is free, THANK YOU!
-# It is explained at the guide you can found at www.theincompleteguide.com
-# You will also find improvement, ideas and explanations
-# You can buy it there, or donate. There's been effort here.
+# It is explained at the guide you can find at www.theincompleteguide.com
+# You will also find improvement ideas and explanations
 
 import pandas as pd
 from datetime import datetime
@@ -20,17 +19,17 @@ class AssetHandler:
         self.tradeableAssets = set() # assets that may be traded today
         self.availableAssets = set() # assets availabe post filter
         self.usedAssets = set() # taken assets being traded
-        self.excludedAssets = {'SPCE'} # excluded assets
+        self.excludedAssets = {'SPCE'} # excluded assets (EXAMPLE)
 
         try:
-            self.rawAssets = pd.read_csv(gvars.RAW_ASSETS,index_col='ticker')
+            self.rawAssets = set(pd.read_csv(gvars.RAW_ASSETS))
             print("Raw assets loaded from csv correclty")
         except Exception as e:
             print("Could not load raw assets!")
             print(e)
             block_thread()
 
-        self.filter_most_active_assets()
+        self.tradeableAssets = self.rawAssets
 
         th = threading.Thread(target=self.unlock_assets) # the process runs appart
         th.start()
@@ -87,17 +86,3 @@ class AssetHandler:
             self.lockedAssets = set()
 
             time.sleep(gvars.sleepTimes['UA'])
-
-    def filter_most_active_assets(self):
-
-        print("\nFiltering assets...")
-
-        # min price filter
-        self.filteredAssets = self.rawAssets.loc[self.rawAssets.price >= gvars.filterParams['MIN_SHARE_PRICE']]
-
-        # 90-day avg volume filter
-        self.filteredAssets = self.filteredAssets.loc[self.rawAssets.avg_vol >= gvars.filterParams['MIN_AVG_VOL']]
-
-        self.tradeableAssets = set(self.filteredAssets.index.tolist())
-        print('%i tradeable assets obtained' % len(self.tradeableAssets))
-        print(self.tradeableAssets)

@@ -1,9 +1,8 @@
 # encoding: utf-8
 
 # This code is free, THANK YOU!
-# It is explained at the guide you can found at www.theincompleteguide.com
-# You will also find improvement, ideas and explanations
-# You can buy it there, or donate. There's been effort here.
+# It is explained at the guide you can find at www.theincompleteguide.com
+# You will also find improvement ideas and explanations
 
 from pathlib import Path
 from datetime import datetime
@@ -22,7 +21,7 @@ API_SECRET_KEY = ""
 ALPACA_API_URL = "https://paper-api.alpaca.markets"
 
 if API_KEY is "" or API_SECRET_KEY is "":
-    print('Please get an API key at the Alpaca website!')
+    print('\n\n##### \n\nPlease get an API key at the Alpaca website! \n\n##### \n\n')
     raise ValueError
 
 ################################################################ ATTEMPTS ->
