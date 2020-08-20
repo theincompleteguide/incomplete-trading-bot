@@ -111,7 +111,7 @@ class Trader:
 
         account = self.alpaca.get_account()
         if float(account.buying_power) < self.operEquity:
-            self._L.info('Oops! Not enough buying power (%d$), aborting' % account.buying_power)
+            self._L.info('Oops! Not enough buying power (%d$), aborting' % float(account.buying_power))
             time.sleep(3)
             return False
         else:
