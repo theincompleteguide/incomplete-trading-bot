@@ -10,9 +10,9 @@ def get_key_secrete(type):
         c.execute(sql, values)
 
         for column in c:
-            auth.add(str(column[0]))
-            auth.add(str(column[1]))
-            auth.add(str(column[2]))
+            auth.append(str(column[0]))
+            auth.append(str(column[1]))
+            auth.append(str(column[2]))
 
         if c:
             c.close()

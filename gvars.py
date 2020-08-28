@@ -16,9 +16,9 @@ operEquity = 1000 # defines the target amount per execution
 limitOrderMargin = 0.1# defines the offset for the limit orders
 
 # YOUR API KEYS AT ALPACA GO HERE!
-API_KEY        = ""
-API_SECRET_KEY = ""
-ALPACA_API_URL = ""
+API_KEY        = "KEY"
+API_SECRET_KEY = "SECRET"
+ALPACA_API_URL = "URL"
 
 if API_KEY == "" or API_SECRET_KEY == "":
     print('\n\n##### \n\nPlease get an API key at the Alpaca website! \n\n##### \n\n')
