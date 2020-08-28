@@ -76,14 +76,17 @@ class Trader:
 
         try:
             if direction is 'buy':
+                self._L.info('before printing 1')
                 self.stopLoss = float(stopLoss - stopLoss*gvars.stopLossMargin)
             elif direction is 'sell':
+                self._L.info('before printing 2')
                 self.stopLoss = float(stopLoss + stopLoss*gvars.stopLossMargin)
             else:
                 raise ValueError
         except Exception as e:
             self._L.info('ERROR_SL! Direction was not clear when setting stoploss!')
             self._L.info(str(e))
+            self._L.info('before printing 3')
             self.stopLoss = float(stopLoss)
 
         self._L.info('StopLoss set at %.2f' % self.stopLoss)
@@ -110,7 +113,9 @@ class Trader:
         # this function returns the number of shares achievable with the purchasing power
 
         account = self.alpaca.get_account()
+        self._L.info('before printing 4')
         if float(account.buying_power) < self.operEquity:
+            self._L.info('before printing 5')
             self._L.info('Oops! Not enough buying power (%d$), aborting' % float(account.buying_power))
             time.sleep(3)
             return False
@@ -287,6 +292,7 @@ class Trader:
         while attempt < maxAttempts:
             try:
                 position = self.alpaca.get_position(stock.name)
+                self._L.info('before printing 6')
                 stock.avg_entry_price = float(position.avg_entry_price)
                 stock.currentPrice = float(self.alpaca.get_position(stock.name).current_price)
                 return True
@@ -348,6 +354,7 @@ class Trader:
         while True:
             try:
                 lastPrice = self.load_historical_data(stock,interval='1Min',limit=1)
+                self._L.info('before printing 7')
                 stock.lastPrice = float(lastPrice.close)
                 self._L.info('Last price read ALPACA    : ' + str(stock.lastPrice))
                 return stock.lastPrice
