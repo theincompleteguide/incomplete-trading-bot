@@ -3,7 +3,7 @@
 # This code is free, THANK YOU!
 # It is explained at the guide you can find at www.theincompleteguide.com
 # You will also find improvement ideas and explanations
-
+import databaseMySql
 from stocklib import *
 from traderlib import *
 from other_functions import *
@@ -93,6 +93,11 @@ def run_tbot(_L,assHand,account):
             assHand.make_asset_available(ticker)
 
 def main():
+    auth = databaseMySql.get_key_secrete('PAPER')
+
+    gvars.ALPACA_API_URL = auth[0]
+    gvars.API_KEY        = auth[1]
+    gvars.API_SECRET_KEY = auth[2]
 
     # Set up a basic stderr logging; this is nothing fancy.
     log_format = '%(asctime)s %(threadName)12s: %(lineno)-4d %(message)s'
