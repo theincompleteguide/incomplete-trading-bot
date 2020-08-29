@@ -17,6 +17,7 @@ limitOrderMargin = 0.1# defines the offset for the limit orders
 
 # YOUR API KEYS AT ALPACA GO HERE!
 API_KEY        = "KEY"
+API_LIVE_KEY   = "KEY"
 API_SECRET_KEY = "SECRET"
 ALPACA_API_URL = "URL"
 

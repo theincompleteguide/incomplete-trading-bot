@@ -1,6 +1,6 @@
 import mysql.connector
 
-def get_key_secrete(type):
+def get_key_secrets(type):
     auth = []
     try:
         values = {'type': type}
@@ -34,5 +34,5 @@ def create_connection():
     return
 
 if __name__ == '__main__':
-    get_key_secrete()
+    get_key_secrets()
 

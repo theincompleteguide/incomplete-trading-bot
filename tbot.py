@@ -4,6 +4,7 @@
 # It is explained at the guide you can find at www.theincompleteguide.com
 # You will also find improvement ideas and explanations
 import databaseMySql
+from alpaca_trade_api import rest
 from stocklib import *
 from traderlib import *
 from other_functions import *
@@ -93,12 +94,13 @@ def run_tbot(_L,assHand,account):
             assHand.make_asset_available(ticker)
 
 def main():
-    # auth = databaseMySql.get_key_secrete('LIVE')
-    auth = databaseMySql.get_key_secrete('PAPER')
+    authLive = databaseMySql.get_key_secrets('LIVE')
+    auth     = databaseMySql.get_key_secrets('PAPER')
 
     gvars.ALPACA_API_URL = auth[0]
     gvars.API_KEY        = auth[1]
     gvars.API_SECRET_KEY = auth[2]
+    gvars.API_LIVE_KEY   = authLive[1]
 
     # Set up a basic stderr logging; this is nothing fancy.
     log_format = '%(asctime)s %(threadName)12s: %(lineno)-4d %(message)s'

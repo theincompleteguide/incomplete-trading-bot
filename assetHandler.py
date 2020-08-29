@@ -5,6 +5,8 @@
 # You will also find improvement ideas and explanations
 
 import pandas as pd
+import alpaca_trade_api as tradeapi
+import alpaca_trade_api.polygon.rest as polygontradeapi
 from datetime import datetime
 from datetime import timedelta
 import time, threading, requests, re, random, os
@@ -13,16 +15,28 @@ from bs4 import BeautifulSoup
 from other_functions import *
 import gvars
 
+
 class AssetHandler:
     def __init__(self):
-        self.lockedAssets = set() # assets without a defined strategy
-        self.tradeableAssets = set() # assets that may be traded today
-        self.availableAssets = set() # assets availabe post filter
-        self.usedAssets = set() # taken assets being traded
-        self.excludedAssets = {'SPCE'} # excluded assets (EXAMPLE)
+        self.lockedAssets = set()  # assets without a defined strategy
+        self.tradeableAssets = set()  # assets that may be traded today
+        self.availableAssets = set()  # assets availabe post filter
+        self.usedAssets = set()  # taken assets being traded
+        self.excludedAssets = {'SPCE'}  # excluded assets (EXAMPLE)
+        self.rawAssets = set()
 
         try:
-            self.rawAssets = set(pd.read_csv(gvars.RAW_ASSETS))
+            tempAssets = set(pd.read_csv(gvars.RAW_ASSETS))
+
+            for ass in tempAssets:
+                try:
+                    polygon = tradeapi.polygon.rest.REST(gvars.API_LIVE_KEY,
+                                                         'staging' in gvars.ALPACA_API_URL)
+                    position = polygon.last_quote(ass)
+                    self.rawAssets.add(ass)
+                except Exception as e:
+                    print(e)
+
             print("Raw assets loaded from csv correclty")
         except Exception as e:
             print("Could not load raw assets!")
@@ -31,7 +45,7 @@ class AssetHandler:
 
         self.tradeableAssets = self.rawAssets
 
-        th = threading.Thread(target=self.unlock_assets) # the process runs appart
+        th = threading.Thread(target=self.unlock_assets)  # the process runs appart
         th.start()
 
     def find_target_asset(self):
@@ -43,16 +57,17 @@ class AssetHandler:
             self.availableAssets -= self.lockedAssets
 
             try:
-                chosenAsset = random.choice(list(self.availableAssets)) # pick a chosen asset randomly
+                chosenAsset = random.choice(list(self.availableAssets))  # pick a chosen asset randomly
                 self.usedAssets.add(chosenAsset)
                 print('Chosen asset: ' + chosenAsset)
-                print('%i available assets, %i used assets, %i locked assets\n' % (len(self.availableAssets),len(self.usedAssets),len(self.lockedAssets)))
+                print('%i available assets, %i used assets, %i locked assets\n' % (
+                len(self.availableAssets), len(self.usedAssets), len(self.lockedAssets)))
                 return chosenAsset
             except:
                 print('No more assets available, waiting for assets to be released...')
                 time.sleep(60)
 
-    def make_asset_available(self,ticker):
+    def make_asset_available(self, ticker):
 
         try:
             self.usedAssets.remove(ticker)
@@ -64,7 +79,7 @@ class AssetHandler:
         print('Asset %s was made available' % ticker)
         time.sleep(1)
 
-    def lock_asset(self,ticker):
+    def lock_asset(self, ticker):
         if type(ticker) is not str:
             raise Exception('ticker is not a string!')
 
@@ -78,8 +93,7 @@ class AssetHandler:
         print('\nUnlocking service initialized')
         while True:
             print('\n# # # Unlocking assets # # #\n')
-            time_before = datetime.now()-timedelta(minutes=30)
-
+            time_before = datetime.now() - timedelta(minutes=30)
 
             self.tradeableAssets = self.tradeableAssets.union(self.lockedAssets)
             print('%d locked assets moved to tradeable' % len(self.lockedAssets))
