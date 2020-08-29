@@ -93,6 +93,7 @@ def run_tbot(_L,assHand,account):
             assHand.make_asset_available(ticker)
 
 def main():
+    # auth = databaseMySql.get_key_secrete('LIVE')
     auth = databaseMySql.get_key_secrete('PAPER')
 
     gvars.ALPACA_API_URL = auth[0]
