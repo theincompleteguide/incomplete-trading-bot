@@ -33,7 +33,9 @@ class AssetHandler:
                     polygon = tradeapi.polygon.rest.REST(gvars.API_LIVE_KEY,
                                                          'staging' in gvars.ALPACA_API_URL)
                     position = polygon.last_quote(ass)
-                    self.rawAssets.add(ass)
+
+                    if position:
+                        self.rawAssets.add(ass)
                 except Exception as e:
                     print(e)
 
