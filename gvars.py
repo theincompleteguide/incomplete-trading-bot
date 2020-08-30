@@ -21,7 +21,7 @@ API_LIVE_KEY   = "KEY"
 API_SECRET_KEY = "SECRET"
 ALPACA_API_URL = "URL"
 
-if API_KEY == "" or API_SECRET_KEY == "":
+if API_KEY is "" or API_SECRET_KEY is "":
     print('\n\n##### \n\nPlease get an API key at the Alpaca website! \n\n##### \n\n')
     raise ValueError
 
