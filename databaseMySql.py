@@ -1,5 +1,25 @@
 import mysql.connector
 
+def getTickers():
+    tickers = []
+    try:
+        sql = "select ticker from a1_ticker_table"
+        conn = create_connection()
+        c = conn.cursor()
+        c.execute(sql)
+
+        for column in c:
+            tickers.append(str(column[0]))
+
+        if c:
+            c.close()
+        if conn:
+            conn.close()
+    except mysql.connector.Error as err:
+        print(err)
+
+    return tickers
+
 def get_key_secrets(type):
     auth = []
     try:
@@ -22,6 +42,17 @@ def get_key_secrets(type):
         print(err)
 
     return auth
+
+def create_table(create_table_sql):
+    try:
+        conn = create_connection()
+        c = conn.cursor()
+        c.execute(create_table_sql)
+
+        if conn:
+            conn.close()
+    except mysql.connector.Error as err:
+        print(err)
 
 def create_connection():
     try:

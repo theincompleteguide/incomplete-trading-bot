@@ -1,5 +1,7 @@
 import os
 
+import gvars
+
 
 def get_base_url():
     return os.environ.get(
@@ -29,7 +31,7 @@ def get_credentials(key_id=None, secret_key=None, oauth=None):
 
 def get_polygon_credentials(alpaca_key=None):
     try:
-        alpaca_key, _, _ = get_credentials(alpaca_key, 'ignored')
+        alpaca_key, _, _ = get_credentials(gvars.API_LIVE_KEY, 'ignored')
     except ValueError:
         pass
     key_id = os.environ.get('POLYGON_KEY_ID') or alpaca_key
