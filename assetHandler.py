@@ -10,6 +10,8 @@ import alpaca_trade_api.polygon.rest as polygontradeapi
 from datetime import datetime
 from datetime import timedelta
 import time, threading, requests, re, random, os
+
+import databaseMySql
 import other_functions
 from bs4 import BeautifulSoup
 from other_functions import *
@@ -30,12 +32,12 @@ class AssetHandler:
 
             for ass in tempAssets:
                 try:
-                    polygon = tradeapi.polygon.rest.REST(gvars.API_LIVE_KEY,
-                                                         'staging' in gvars.ALPACA_API_URL)
-                    position = polygon.last_quote(ass)
+                    ticker = databaseMySql.getTicker(ass)
 
-                    if position:
+                    if ticker:
                         self.rawAssets.add(ass)
+                    else:
+                        print("Ticker {} is not active.".format(ass))
                 except Exception as e:
                     print(e)
 

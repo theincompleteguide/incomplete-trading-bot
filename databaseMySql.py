@@ -20,6 +20,26 @@ def getTickers():
 
     return tickers
 
+def getTicker(symbol):
+    try:
+        values = {'symbol': symbol}
+        sql = "select ticker from a1_ticker_table where ticker=%(symbol)s and active=1"
+        conn = create_connection()
+        c = conn.cursor()
+        c.execute(sql, values)
+
+        for column in c:
+            return str(column[0])
+
+        if c:
+            c.close()
+        if conn:
+            conn.close()
+    except mysql.connector.Error as err:
+        print(err)
+
+    return None
+
 def get_key_secrets(type):
     auth = []
     try:
