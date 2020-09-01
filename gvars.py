@@ -7,7 +7,7 @@
 from pathlib import Path
 from datetime import datetime
 
-MAX_WORKERS = 10 # max threads at a time
+MAX_WORKERS = 40 # max threads at a time
 
 gainRatio = 1.5 # takeProfit = -stopLoss*gainRatio
 stopLossMargin = 0.05 # extra margin for the stop loss
@@ -16,10 +16,12 @@ operEquity = 1000 # defines the target amount per execution
 limitOrderMargin = 0.1# defines the offset for the limit orders
 
 # YOUR API KEYS AT ALPACA GO HERE!
-API_KEY        = "KEY"
-API_LIVE_KEY   = "KEY"
-API_SECRET_KEY = "SECRET"
-ALPACA_API_URL = "URL"
+API_KEY         = "KEY"
+API_LIVE_KEY    = "KEY"
+API_LIVE_SECRET = "KEY"
+API_LIVE_URL = "KEY"
+API_SECRET_KEY  = "SECRET"
+ALPACA_API_URL  = "URL"
 
 if API_KEY is "" or API_SECRET_KEY is "":
     print('\n\n##### \n\nPlease get an API key at the Alpaca website! \n\n##### \n\n')

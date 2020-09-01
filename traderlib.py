@@ -25,6 +25,7 @@ class Trader:
             self.API_SECRET_KEY = API_SECRET_KEY
             self.ALPACA_API_URL = "https://paper-api.alpaca.markets"
             self.alpaca = tradeapi.REST(self.API_KEY, self.API_SECRET_KEY, self.ALPACA_API_URL, api_version='v2') # or use ENV Vars
+            self.alpaca_live = tradeapi.REST(gvars.API_LIVE_KEY, gvars.API_LIVE_SECRET, gvars.API_LIVE_URL, api_version='v2') # or use ENV Vars
 
         except Exception as e:
             self._L.info('ERROR_IN: error when initializing: ' + str(e))
@@ -133,7 +134,7 @@ class Trader:
         while True:
             try: # fetch the data
                 if interval is '30Min':
-                    df = self.alpaca.get_barset(stock.name, '5Min', limit).df[stock.name]
+                    df = self.alpaca_live.get_barset(stock.name, '5Min', limit).df[stock.name]
                     stock.df = df.resample('30min').agg({
                                         'open':'first',
                                         'high':'max',
@@ -143,7 +144,7 @@ class Trader:
                                         })
 
                 else:
-                    stock.df = self.alpaca.get_barset(stock.name, interval, limit).df[stock.name]
+                    stock.df = self.alpaca_live.get_barset(stock.name, interval, limit).df[stock.name]
 
             except Exception as e:
                 self._L.info('WARNING_HD: Could not load historical data, retrying')

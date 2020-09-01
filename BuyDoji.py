@@ -9,6 +9,9 @@ import time
 import datetime
 import logging
 import argparse
+import schedule
+import time
+
 # You must initialize logging, otherwise you'll not see debug output.
 logging.basicConfig()
 logging.getLogger().setLevel(logging.DEBUG)
@@ -25,6 +28,20 @@ API_SECRET        = ""
 APCA_API_BASE_URL = ""
 
 #endregion
+
+def job(alpaca_live):
+    print("I'm working...")
+    bar = alpaca_live.get_barset("MSFT", '5Min', 1)
+
+    print(bar)
+    symbol = bar['MSFT'].symbol
+    print("Close: ", bar.close)
+    print("Open: ", bar.open)
+    print("Low: ", bar.low)
+    print(symbol)
+    # Check for Doji
+    if bar.close > bar.open and bar.open - bar.low > 0.1:
+        print('Buying on Doji!')
 
 #Buy a stock when a doji candle forms
 class BuyDoji:
@@ -47,6 +64,11 @@ class BuyDoji:
 
     self.alpaca = tradeapi.REST(API_KEY, API_SECRET, APCA_API_BASE_URL, api_version='v2')
 
+    schedule.every(20).seconds.do(job(self.alpaca))
+    while True:
+        schedule.run_pending()
+        time.sleep(1)
+
   def run(self):
         #On Each Minute
         async def on_minute(conn, channel, bar):
@@ -66,6 +88,7 @@ class BuyDoji:
         on_minute = conn.on(r'AM$')(on_minute)
         # Subscribe to Microsoft Stock
         conn.run(['AM.MSFT'])
+
 # Run the BuyDoji class
 ls = BuyDoji()
 ls.run()

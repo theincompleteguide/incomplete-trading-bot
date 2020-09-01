@@ -100,7 +100,9 @@ def main():
     gvars.ALPACA_API_URL = auth[0]
     gvars.API_KEY        = auth[1]
     gvars.API_SECRET_KEY = auth[2]
+    gvars.API_LIVE_URL   = authLive[0]
     gvars.API_LIVE_KEY   = authLive[1]
+    gvars.API_LIVE_SECRET   = authLive[2]
 
     # Set up a basic stderr logging; this is nothing fancy.
     log_format = '%(asctime)s %(threadName)12s: %(lineno)-4d %(message)s'
