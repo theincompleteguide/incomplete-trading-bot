@@ -29,7 +29,7 @@ class Trader:
 
         except Exception as e:
             self._L.info('ERROR_IN: error when initializing: ' + str(e))
-            block_thread(self._L,e,self.thName)
+            block_thread(self._L,self.thName)
 
         self.operEquity = gvars.operEquity
         self.pctMargin = gvars.limitOrderMargin/100
@@ -213,7 +213,7 @@ class Trader:
                 limit_price = orderDict['limit_price'] * (1-self.pctMargin)
             else:
                 self._L.info('Side not identified: ' + str(side))
-                block_thread(self._L,e,self.thName)
+                block_thread(self._L,self.thName)
             self._L.info('Corrected (added margin) limit price: %.3f$' % limit_price)
 
         elif orderDict['type'] is 'market': # adjust order for a market type
@@ -281,7 +281,7 @@ class Trader:
                 time.sleep(5)
 
         self._L.info('DANGER: order could not be cancelled, blocking thread')
-        block_thread(self._L,e,self.thName,stock.name)
+        block_thread(self._L, self.thName)
 
     def check_position(self,stock,maxAttempts=False):
         # this function checks wether the position is there or not
