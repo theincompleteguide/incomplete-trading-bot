@@ -7,7 +7,7 @@
 from pathlib import Path
 from datetime import datetime
 
-MAX_WORKERS = 40 # max threads at a time
+MAX_WORKERS = 10 # max threads at a time
 
 gainRatio = 1.5 # takeProfit = -stopLoss*gainRatio
 stopLossMargin = 0.05 # extra margin for the stop loss
@@ -19,7 +19,7 @@ limitOrderMargin = 0.1# defines the offset for the limit orders
 API_KEY         = "KEY"
 API_LIVE_KEY    = "KEY"
 API_LIVE_SECRET = "KEY"
-API_LIVE_URL = "KEY"
+API_LIVE_URL    = "KEY"
 API_SECRET_KEY  = "SECRET"
 ALPACA_API_URL  = "URL"
 

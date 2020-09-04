@@ -126,6 +126,6 @@ if __name__ == '__main__':
     gvars.API_SECRET_KEY = auth[2]
     gvars.API_LIVE_KEY   = authLive[1]
 
-    updateAllTickers()
+    # updateAllTickers()
 
-    # updateTickerIfItsNew()
+    updateTickerIfItsNew()

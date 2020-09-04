@@ -31,6 +31,7 @@ APCA_API_BASE_URL = ""
 
 def job(alpaca_live):
     print("I'm working...")
+    ass = alpaca_live.get_asset("MSFT")
     bar = alpaca_live.get_barset("MSFT", '5Min', 1)
 
     print(bar)

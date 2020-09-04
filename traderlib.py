@@ -117,7 +117,7 @@ class Trader:
         self._L.info('before printing 4')
         if float(account.buying_power) < self.operEquity:
             self._L.info('before printing 5')
-            self._L.info('Oops! Not enough buying power (%d$), aborting' % float(account.buying_power))
+            self._L.info("Oops! Not enough buying power {}, equity {} aborting".format(str(account.buying_power), str(self.operEquity)))
             time.sleep(3)
             return False
         else:
