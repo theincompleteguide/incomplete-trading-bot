@@ -4,6 +4,8 @@
 # It is explained at the guide you can find at www.theincompleteguide.com
 # You will also find improvement ideas and explanations
 
+from datetime import timedelta
+import threading, random
 import pandas as pd
 import alpaca_trade_api as tradeapi
 import alpaca_trade_api.polygon.rest as polygontradeapi
@@ -11,11 +13,10 @@ from datetime import datetime
 from datetime import timedelta
 import time, threading, requests, re, random, os
 
-import databaseMySql
+from database import databaseMySql
 import other_functions
 from bs4 import BeautifulSoup
 from other_functions import *
-import gvars
 
 
 class AssetHandler:
@@ -98,9 +99,20 @@ class AssetHandler:
         while True:
             print('\n# # # Unlocking assets # # #\n')
             time_before = datetime.now() - timedelta(minutes=30)
+            temp_set = set()
+
+            try:
+                positions = gvars.get_alpaca_api().alpaca.list_positions()
+                for position in positions:
+                    temp_set.add(position.symbol)
+                    # Discard will remove an item from set. But no exception if the item do not exist.
+                    self.lockedAssets.discard(position.symbol)
+            except Exception as e:
+                 print(e)
 
             self.tradeableAssets = self.tradeableAssets.union(self.lockedAssets)
             print('%d locked assets moved to tradeable' % len(self.lockedAssets))
             self.lockedAssets = set()
+            self.lockedAssets = temp_set
 
             time.sleep(gvars.sleepTimes['UA'])

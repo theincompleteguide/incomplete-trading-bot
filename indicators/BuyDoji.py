@@ -1,14 +1,9 @@
 import os
 
 import alpaca_trade_api as tradeapi
-import databaseMySql
-import gvars
+from database import databaseMySql, gvars
 from alpaca_trade_api import StreamConn
-import threading
-import time
-import datetime
 import logging
-import argparse
 import schedule
 import time
 

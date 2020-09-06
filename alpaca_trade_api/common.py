@@ -1,6 +1,6 @@
 import os
 
-import gvars
+from database import gvars
 
 
 def get_base_url():

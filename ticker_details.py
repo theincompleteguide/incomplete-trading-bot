@@ -1,9 +1,6 @@
-from datetime import datetime
-
 import mysql
 
-import databaseMySql
-import gvars
+from database import databaseMySql, gvars
 import alpaca_trade_api as tradeapi
 
 def updateTickerIfItsNew():

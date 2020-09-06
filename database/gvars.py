@@ -3,9 +3,12 @@
 # This code is free, THANK YOU!
 # It is explained at the guide you can find at www.theincompleteguide.com
 # You will also find improvement ideas and explanations
-
+import os
 from pathlib import Path
 from datetime import datetime
+
+import alpaca_trade_api
+from database import databaseMySql
 
 MAX_WORKERS = 10 # max threads at a time
 
@@ -80,7 +83,7 @@ sleepTimes = {
 home = str(Path.home())
 
 FILES_FOLDER = home + '/tbot_files/'
-RAW_ASSETS = './_raw_assets.csv'
+RAW_ASSETS = './database/_raw_assets.csv'
 LOGS_PATH = FILES_FOLDER + 'logs/'
 
 ################################################################ ASSET PARAMS ->
@@ -89,3 +92,29 @@ filterParams = {
     'MIN_SHARE_PRICE':30, #dollars
     'MIN_AVG_VOL':0.5, #millions of dollars
     }
+
+
+def get_alpaca_api():
+    global ALPACA_API_URL
+    global API_KEY
+    global API_SECRET_KEY
+    global API_LIVE_KEY
+    global API_LIVE_SECRET
+    global API_LIVE_URL
+
+    auth = databaseMySql.get_key_secrets('PAPER')
+    live = databaseMySql.get_key_secrets('LIVE')
+
+    ALPACA_API_URL = auth[0]
+    API_KEY = auth[1]
+    API_SECRET_KEY = auth[2]
+    API_LIVE_URL = live[0]
+    API_LIVE_KEY = live[1]
+    API_LIVE_SECRET = live[2]
+
+    os.environ['APCA_API_KEY_ID'] = API_KEY
+    os.environ['APCA_API_SECRET_KEY'] = API_SECRET_KEY
+
+    alpaca_api = alpaca_trade_api.REST(API_KEY, API_SECRET_KEY, ALPACA_API_URL, api_version='v2')
+
+    return alpaca_api
