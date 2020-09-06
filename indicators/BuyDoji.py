@@ -76,7 +76,7 @@ class BuyDoji:
             #Check for Doji
             if bar.close > bar.open and bar.open - bar.low > 0.1:
                 print('Buying on Doji!')
-                # self.alpaca.submit_order(symbol,1,'buy','market','day')
+                # self.alpaca.submit_order(symbol,1,gvars.BUY,'market','day')
             #TODO : Take profit
 
         #Connect to get streaming market data

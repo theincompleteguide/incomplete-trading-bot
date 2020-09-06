@@ -26,6 +26,9 @@ API_LIVE_URL    = "KEY"
 API_SECRET_KEY  = "SECRET"
 ALPACA_API_URL  = "URL"
 
+SELL = 'sell'
+BUY = 'buy'
+
 if API_KEY is "" or API_SECRET_KEY is "":
     print('\n\n##### \n\nPlease get an API key at the Alpaca website! \n\n##### \n\n')
     raise ValueError
@@ -118,3 +121,4 @@ def get_alpaca_api():
     alpaca_api = alpaca_trade_api.REST(API_KEY, API_SECRET_KEY, ALPACA_API_URL, api_version='v2')
 
     return alpaca_api
+

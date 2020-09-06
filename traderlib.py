@@ -48,10 +48,10 @@ class Trader:
                 return False
             else:
                 if direction:
-                    if (direction is 'sell') and (not asset.shortable):
+                    if (direction is gvars.SELL) and (not asset.shortable):
                         self._L.info('%s is not shortable, locking it' % ticker)
                         return False
-                    elif (direction is 'buy') and (not asset.tradable):
+                    elif (direction is gvars.BUY) and (not asset.tradable):
                         self._L.info('%s is not tradable, locking it' % ticker)
                         return False
 
@@ -79,10 +79,10 @@ class Trader:
         # this function takes a price as a input and sets the stoploss there
 
         try:
-            if direction is 'buy':
+            if direction is gvars.BUY:
                 self._L.info('before printing 1')
                 self.stopLoss = float(stopLoss - stopLoss * gvars.stopLossMargin)
-            elif direction is 'sell':
+            elif direction is gvars.SELL:
                 self._L.info('before printing 2')
                 self.stopLoss = float(stopLoss + stopLoss * gvars.stopLossMargin)
             else:
@@ -212,9 +212,9 @@ class Trader:
             type = 'limit'
             self._L.info('Desired limit price for limit order: %.3f$' % orderDict['limit_price'])
 
-            if side is 'buy':
+            if side is gvars.BUY:
                 limit_price = orderDict['limit_price'] * (1 + self.pctMargin)
-            elif side is 'sell':
+            elif side is gvars.SELL:
                 limit_price = orderDict['limit_price'] * (1 - self.pctMargin)
             else:
                 self._L.info('Side not identified: ' + str(side))
@@ -330,13 +330,13 @@ class Trader:
                 # check the buying trend
                 if (ema9[-1] > ema26[-1]) and (ema26[-1] > ema50[-1]):
                     self._L.info('OK: Trend going UP')
-                    stock.direction = 'buy'
+                    stock.direction = gvars.BUY
                     return True
 
                 # check the selling trend
                 elif (ema9[-1] < ema26[-1]) and (ema26[-1] < ema50[-1]):
                     self._L.info('OK: Trend going DOWN')
-                    stock.direction = 'sell'
+                    stock.direction = gvars.SELL
                     return True
 
                 elif timeout >= gvars.timeouts['GT']:
@@ -389,7 +389,7 @@ class Trader:
 
                 # look for a buying trend
                 if (
-                        (stock.direction == 'buy') and
+                        (stock.direction == gvars.BUY) and
                         (ema9[-1] > ema26[-1]) and
                         (ema26[-1] > ema50[-1])
                 ):
@@ -398,7 +398,7 @@ class Trader:
 
                 # look for a selling trend
                 elif (
-                        (stock.direction == 'sell') and
+                        (stock.direction == gvars.SELL) and
                         (ema9[-1] < ema26[-1]) and
                         (ema26[-1] < ema50[-1])
                 ):
@@ -432,11 +432,11 @@ class Trader:
             rsi = ti.rsi(stock.df.close.values, 14)  # it uses 14 periods
             rsi = rsi[-1]
 
-            if (stock.direction == 'buy') and ((rsi > 50) and (rsi < 80)):
+            if (stock.direction == gvars.BUY) and ((rsi > 50) and (rsi < 80)):
                 self._L.info('OK: RSI is %.2f' % rsi)
                 return True, rsi
 
-            elif (stock.direction == 'sell') and ((rsi < 50) and (rsi > 20)):
+            elif (stock.direction == gvars.SELL) and ((rsi < 50) and (rsi > 20)):
                 self._L.info('OK: RSI is %.2f' % rsi)
                 return True, rsi
 
@@ -468,7 +468,7 @@ class Trader:
 
                 # look for a buying condition
                 if (
-                        (direction == 'buy') and
+                        (direction == gvars.BUY) and
                         (stoch_k > stoch_d) and
                         ((stoch_k <= gvars.limStoch['maxBuy']) and (stoch_d <= gvars.limStoch['maxBuy']))
                 ):
@@ -477,7 +477,7 @@ class Trader:
 
                 # look for a selling condition
                 elif (
-                        (direction == 'sell') and
+                        (direction == gvars.SELL) and
                         (stoch_k < stoch_d) and
                         ((stoch_d >= gvars.limStoch['minSell']) and (stoch_k >= gvars.limStoch['minSell']))
                 ):
@@ -509,13 +509,13 @@ class Trader:
         stopLoss = self.set_stoploss(ema50, direction=stock.direction)  # stoploss = EMA50
         takeProfit = self.set_takeprofit(stock.avg_entry_price, stopLoss)
 
-        if stock.direction is 'buy':
+        if stock.direction is gvars.BUY:
             targetGainInit = int((takeProfit - stock.avg_entry_price) * sharesQty)
-            reverseDirection = 'sell'
+            reverseDirection = gvars.SELL
 
-        elif stock.direction is 'sell':
+        elif stock.direction is gvars.SELL:
             targetGainInit = int((stock.avg_entry_price - takeProfit) * sharesQty)
-            reverseDirection = 'buy'
+            reverseDirection = gvars.BUY
 
         self._L.info('######################################')
         self._L.info('#    TICKER       : %s' % stock.name)
@@ -553,15 +553,15 @@ class Trader:
                 currentPrice = stock.currentPrice
 
             # calculate current gain
-            if stock.direction is 'buy':
+            if stock.direction is gvars.BUY:
                 currentGain = (currentPrice - stock.avg_entry_price) * sharesQty
-            elif stock.direction is 'sell':
+            elif stock.direction is gvars.SELL:
                 currentGain = (stock.avg_entry_price - currentPrice) * sharesQty
 
             # if stop loss reached
             if (
-                    (stock.direction is 'buy' and currentPrice <= stopLoss) or
-                    (stock.direction is 'sell' and currentPrice >= stopLoss)
+                    (stock.direction is gvars.BUY and currentPrice <= stopLoss) or
+                    (stock.direction is gvars.SELL and currentPrice >= stopLoss)
             ):
                 self._L.info('STOPLOSS reached at price %.3f' % currentPrice)
                 self.success = 'NO: STOPLOSS'
@@ -657,9 +657,10 @@ class Trader:
 
             self._L.info('[%s] Current price read: %.2f' % (stock.name, currentPrice))
 
-            if not self.submitOrder(orderDict):  # check if the order has been SENT
-                self._L.info('Could not submit order, RESTARTING SEQUENCE')
-                return stock.name, False
+            if orderDict['side'] == gvars.BUY:
+                if not self.submitOrder(orderDict):  # check if the order has been SENT
+                    self._L.info('Could not submit order, RESTARTING SEQUENCE')
+                    return stock.name, False
 
             if not self.check_position(stock):  # check if the order has EXISTS
                 self._L.info('Order did not become a position, cancelling order')
@@ -731,9 +732,10 @@ class Trader:
 
             self._L.info('[%s] Current price read: %.2f' % (stock.name, currentPrice))
 
-            if not self.submitOrder(orderDict):  # check if the order has been SENT
-                self._L.info('Could not submit order, RESTARTING SEQUENCE')
-                return stock.name, False
+            if orderDict['side'] == gvars.SELL:
+                if not self.submitOrder(orderDict):  # check if the order has been SENT
+                    self._L.info('Could not submit order, RESTARTING SEQUENCE')
+                    return stock.name, False
 
             if not self.check_position(stock):  # check if the order has EXISTS
                 self._L.info('Order did not become a position, cancelling order')

@@ -21,13 +21,22 @@ def sell(_L, account):
                 for position in positions:
                     stock = Stock(position.symbol)
                     _L.info("Sell Position exist for Asset: {}".format(position.symbol))
-                    process_asset_bought(stock, trader)
+                    start_sell_thread(stock, trader)
+
+                time.sleep(30)
             except Exception as e:
                 continue
         else:
             time.sleep(60)
 
             break
+
+
+def start_sell_thread(stock, trader):
+    worker = 'sell-thread-' + str(stock.name)  # establishing each worker name
+
+    worker = threading.Thread(name=worker, target=process_asset_bought, args=(stock, trader))
+    worker.start()  # it runs a run_tbot function, declared here as well
 
 
 def process_asset_bought(stock, trader):
