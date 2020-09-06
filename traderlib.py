@@ -620,6 +620,9 @@ class Trader:
         if not self.get_general_trend(stock):  # check the trend
             return stock.name, True
 
+        if stock != gvars.BUY:
+            return stock.name, True
+
         if not self.is_tradable(stock.name, stock.direction):  # can it be traded?
             return stock.name, True
 
@@ -657,10 +660,9 @@ class Trader:
 
             self._L.info('[%s] Current price read: %.2f' % (stock.name, currentPrice))
 
-            if orderDict['side'] == gvars.BUY:
-                if not self.submitOrder(orderDict):  # check if the order has been SENT
-                    self._L.info('Could not submit order, RESTARTING SEQUENCE')
-                    return stock.name, False
+            if not self.submitOrder(orderDict):  # check if the order has been SENT
+                self._L.info('Could not submit order, RESTARTING SEQUENCE')
+                return stock.name, False
 
             if not self.check_position(stock):  # check if the order has EXISTS
                 self._L.info('Order did not become a position, cancelling order')
@@ -698,6 +700,9 @@ class Trader:
         if not self.get_general_trend(stock):  # check the trend
             return stock.name, True
 
+        if stock != gvars.SELL:
+            return stock.name, True
+
         self.timeout = 0
         while True:
 
@@ -732,10 +737,9 @@ class Trader:
 
             self._L.info('[%s] Current price read: %.2f' % (stock.name, currentPrice))
 
-            if orderDict['side'] == gvars.SELL:
-                if not self.submitOrder(orderDict):  # check if the order has been SENT
-                    self._L.info('Could not submit order, RESTARTING SEQUENCE')
-                    return stock.name, False
+            if not self.submitOrder(orderDict):  # check if the order has been SENT
+                self._L.info('Could not submit order, RESTARTING SEQUENCE')
+                return stock.name, False
 
             if not self.check_position(stock):  # check if the order has EXISTS
                 self._L.info('Order did not become a position, cancelling order')
