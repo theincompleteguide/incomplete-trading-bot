@@ -5,6 +5,9 @@ import logging
 # This code is free, THANK YOU!
 # It is explained at the guide you can find at www.theincompleteguide.com
 # You will also find improvement ideas and explanations
+from time import sleep
+
+from bots import bot
 from database import databaseMySql
 from alpaca_trade_api import rest
 from stocklib import *
@@ -47,7 +50,10 @@ def is_market_open(api):
         curr_time = clock.timestamp.replace().timestamp()
         time_to_open = int((opening_time - curr_time) / 60)
 
-        print(str(time_to_open) + " minutes til market open. " + display_time(time_to_open / 0.016667))
+        today = datetime.now()
+        now = today.strftime("%d/%m/%Y %H:%M:%S")
+
+        print("Today: " + now + " " + str(time_to_open) + " minutes til market open. " + display_time(time_to_open / 0.016667))
 
     return is_open
 
@@ -76,5 +82,8 @@ def display_time(seconds, granularity=2):
 if __name__ == '__main__':
     alpaca_api = gvars.get_alpaca_api()
 
-    # if is_market_open():
-    # bot.main()
+    while not is_market_open(alpaca_api):
+        sleep(50)
+
+    bot.main()
+

@@ -54,15 +54,26 @@ class MultiHandler(logging.Handler):
         except Exception as e:
             self.handleError(record)
 
+def build_sell_workers(account):
+    sell_bot.sell(_L, account)
+
+
+def build_buy_workers(account, assHand):
+    for thread in range(gvars.MAX_WORKERS):  # this will launch the threads
+        worker = 'th' + str(thread)  # establishing each worker name
+
+        worker = threading.Thread(name=worker, target=buy_bot.buy, args=(_L, assHand, account))
+        worker.start()  # it runs a run_tbot function, declared here as well
+
+        time.sleep(1)
+
 
 def main():
-    global alpaca_api
-
     set_logger_config()
 
-    account, assHand = set_alpaca_api_config()
+    account, ass_and = set_alpaca_api_config()
 
-    build_buy_workers(account, assHand)
+    build_buy_workers(account, ass_and)
     build_sell_workers(account)
 
 
@@ -99,20 +110,6 @@ def set_logger_config():
     _L.setLevel(logging.DEBUG)
     _L.info("\n\n\nRun initiated")
     _L.info('Max workers allowed: ' + str(gvars.MAX_WORKERS))
-
-
-def build_sell_workers(account):
-    sell_bot.sell(_L, account)
-
-
-def build_buy_workers(account, assHand):
-    for thread in range(gvars.MAX_WORKERS):  # this will launch the threads
-        worker = 'th' + str(thread)  # establishing each worker name
-
-        worker = threading.Thread(name=worker, target=buy_bot.buy, args=(_L, assHand, account))
-        worker.start()  # it runs a run_tbot function, declared here as well
-
-        time.sleep(1)
 
 
 def is_market_about_to_close():

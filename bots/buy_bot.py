@@ -20,13 +20,13 @@ def buy(_L, assHand, account):
                 assHand.lock_asset(ticker)
                 continue
             except Exception as e:
-                print("Position not exist for Asset: {}".format(ticker))
+                _L.info("Position not exist for Asset: {}".format(ticker))
                 ticker = process_not_used_asset(assHand, stock, ticker, trader)
         else:
-            print("Market closing soon.  Closing positions.")
+            _L.info("Market closing soon.  Closing positions.")
             tbot.clean_open_orders(trader.alpaca)
 
-            print("Market is closing soon. Ending all BUY...")
+            _L.info("Market is closing soon. Ending all BUY...")
             break
 
 

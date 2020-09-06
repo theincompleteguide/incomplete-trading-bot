@@ -20,7 +20,7 @@ def sell(_L, account):
                 positions = trader.alpaca.list_positions()
                 for position in positions:
                     stock = Stock(position.symbol)
-                    print("Sell Position exist for Asset: {}".format(position.symbol))
+                    _L.info("Sell Position exist for Asset: {}".format(position.symbol))
                     process_asset_bought(stock, trader)
             except Exception as e:
                 continue
