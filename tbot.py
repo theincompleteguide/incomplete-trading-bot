@@ -17,6 +17,7 @@ from pytz import timezone
 # Global object we log to; the handler will work with any log message
 _L = logging.getLogger("demo")
 
+
 # Create a special logger that logs to per-thread-name files
 class MultiHandler(logging.Handler):
     def __init__(self, dirname):
@@ -58,6 +59,7 @@ class MultiHandler(logging.Handler):
         except:
             self.handleError(record)
 
+
 def clean_open_orders(api):
     # First, cancel any existing orders so they don't impact our buying power.
     orders = api.list_orders(status="open")
@@ -66,18 +68,18 @@ def clean_open_orders(api):
     print('%i orders were found open' % int(len(orders)))
 
     for order in orders:
-      api.cancel_order(order.id)
+        api.cancel_order(order.id)
+
 
 def check_account_ok(api):
-
     account = api.get_account()
     if account.account_blocked or account.trading_blocked or account.transfers_blocked:
-
         print('OJO, account blocked. WTF?')
-        import pdb; pdb.set_trace()
+        import pdb;
+        pdb.set_trace()
 
-def run_tbot(_L,assHand,account):
 
+def run_tbot(_L, assHand, account):
     # initialize trader object
     trader = Trader(gvars.API_KEY, gvars.API_SECRET_KEY, _L, account)
 
@@ -86,24 +88,25 @@ def run_tbot(_L,assHand,account):
         ticker = assHand.find_target_asset()
         stock = Stock(ticker)
 
-        ticker,lock = trader.run(stock) # run the trading program
+        ticker, lock = trader.run(stock)  # run the trading program
 
-        if lock: # if the trend is not favorable, lock it temporarily
+        if lock:  # if the trend is not favorable, lock it temporarily
             assHand.lock_asset(ticker)
         else:
             assHand.make_asset_available(ticker)
 
+
+def set_alpaca_api():
+    auth = databaseMySql.get_key_secrets('PAPER')
+    live = databaseMySql.get_key_secrets('LIVE')
+    gvars.ALPACA_API_URL = live[0]
+    gvars.API_KEY = live[1]
+    gvars.API_SECRET_KEY = live[2]
+    os.environ['APCA_API_KEY_ID'] = gvars.API_KEY
+    os.environ['APCA_API_SECRET_KEY'] = gvars.API_SECRET_KEY
+
+
 def main():
-    authLive = databaseMySql.get_key_secrets('LIVE')
-    auth     = databaseMySql.get_key_secrets('PAPER')
-
-    gvars.ALPACA_API_URL = auth[0]
-    gvars.API_KEY        = auth[1]
-    gvars.API_SECRET_KEY = auth[2]
-    gvars.API_LIVE_URL   = authLive[0]
-    gvars.API_LIVE_KEY   = authLive[1]
-    gvars.API_LIVE_SECRET   = authLive[2]
-
     # Set up a basic stderr logging; this is nothing fancy.
     log_format = '%(asctime)s %(threadName)12s: %(lineno)-4d %(message)s'
     stderr_handler = logging.StreamHandler()
@@ -130,20 +133,62 @@ def main():
     # get the Alpaca account ready
     try:
         _L.info("Getting account")
-        check_account_ok(api) # check if it is ok to trade
+        check_account_ok(api)  # check if it is ok to trade
         account = api.get_account()
-        clean_open_orders(api) # clean all the open orders
+        clean_open_orders(api)  # clean all the open orders
         _L.info("Got it")
     except Exception as e:
         _L.info(str(e))
 
-    for thread in range(gvars.MAX_WORKERS): # this will launch the threads
-        worker = 'th' + str(thread) # establishing each worker name
+    for thread in range(gvars.MAX_WORKERS):  # this will launch the threads
+        worker = 'th' + str(thread)  # establishing each worker name
 
-        worker = threading.Thread(name=worker,target=run_tbot,args=(_L,assHand,account))
-        worker.start() # it runs a run_tbot function, declared here as well
+        worker = threading.Thread(name=worker, target=run_tbot, args=(_L, assHand, account))
+        worker.start()  # it runs a run_tbot function, declared here as well
 
         time.sleep(1)
 
+
+def is_market_open():
+    api = tradeapi.REST(gvars.API_KEY, gvars.API_SECRET_KEY, gvars.ALPACA_API_URL, api_version='v2')
+    is_open = api.get_clock().is_open
+    while not is_open:
+        clock = api.get_clock()
+        opening_time = clock.next_open.replace().timestamp()
+        curr_time = clock.timestamp.replace().timestamp()
+        time_to_open = int((opening_time - curr_time) / 60)
+
+        print(str(time_to_open) + " minutes til market open. " + display_time(time_to_open/0.016667))
+
+        time.sleep(60)
+        is_open = api.get_clock().is_open
+
+    return is_open
+
+
+intervals = (
+    ('days', 86400),  # 60 * 60 * 24
+    ('hours', 3600),  # 60 * 60
+    ('minutes', 60),
+    ('seconds', 1),
+)
+
+
+def display_time(seconds, granularity=2):
+    result = []
+
+    for name, count in intervals:
+        value = seconds // count
+        if value:
+            seconds -= value * count
+            if value == 1:
+                name = name.rstrip('s')
+            result.append("{} {}".format(value, name))
+    return ', '.join(result[:granularity])
+
+
 if __name__ == '__main__':
-    main()
+    set_alpaca_api()
+
+    if is_market_open():
+        main()
