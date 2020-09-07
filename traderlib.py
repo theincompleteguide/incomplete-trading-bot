@@ -12,6 +12,8 @@ import os, time, threading, pytz
 import pandas as pd
 
 from datetime import datetime, timezone, timedelta
+
+from indicators import general_trend, instant_trend, rsi_trend, stochastic_trend
 from other_functions import *
 from math import ceil
 
@@ -24,7 +26,7 @@ class Trader:
         try:
             self.API_KEY = API_KEY
             self.API_SECRET_KEY = API_SECRET_KEY
-            self.ALPACA_API_URL = "https://paper-api.alpaca.markets"
+            self.ALPACA_API_URL = gvars.ALPACA_API_URL
             self.alpaca = tradeapi.REST(self.API_KEY, self.API_SECRET_KEY, self.ALPACA_API_URL,
                                         api_version='v2')  # or use ENV Vars
             self.alpaca_live = tradeapi.REST(gvars.API_LIVE_KEY, gvars.API_LIVE_SECRET, gvars.API_LIVE_URL,
@@ -308,52 +310,6 @@ class Trader:
         self._L.info('Position NOT found for %s' % stock.name)
         return False
 
-    def get_general_trend(self, stock):
-        # this function analyses the general trend
-        # it defines the direction and returns a True if defined
-
-        self._L.info('\n\n### GENERAL TREND ANALYSIS (%s) ###' % stock.name)
-        timeout = 1
-
-        try:
-            while True:
-                self.load_historical_data(stock, interval=gvars.fetchItval['big'])
-
-                # calculate the EMAs
-                ema9 = ti.ema(stock.df.close.dropna().to_numpy(), 9)
-                ema26 = ti.ema(stock.df.close.dropna().to_numpy(), 26)
-                ema50 = ti.ema(stock.df.close.dropna().to_numpy(), 50)
-
-                self._L.info('[GT %s] Current: EMA9: %.3f // EMA26: %.3f // EMA50: %.3f' % (
-                    stock.name, ema9[-1], ema26[-1], ema50[-1]))
-
-                # check the buying trend
-                if (ema9[-1] > ema26[-1]) and (ema26[-1] > ema50[-1]):
-                    self._L.info('OK: Trend going UP')
-                    stock.direction = gvars.BUY
-                    return True
-
-                # check the selling trend
-                elif (ema9[-1] < ema26[-1]) and (ema26[-1] < ema50[-1]):
-                    self._L.info('OK: Trend going DOWN')
-                    stock.direction = gvars.SELL
-                    return True
-
-                elif timeout >= gvars.timeouts['GT']:
-                    self._L.info('This asset is not interesting (timeout)')
-                    return False
-
-                else:
-                    self._L.info('Trend not clear, waiting...')
-
-                    timeout += gvars.sleepTimes['GT']
-                    time.sleep(gvars.sleepTimes['GT'])
-
-        except Exception as e:
-            self._L.info('ERROR_GT: error at general trend')
-            self._L.info(e)
-            block_thread(self._L, e, self.thName)
-
     def get_last_price(self, stock):
         # this function fetches the last full 1-min candle of Alpaca in a loop
 
@@ -367,136 +323,6 @@ class Trader:
             except:
                 self._L.info('Failed to fetch data from alpaca, trying again')
                 time.sleep(10)
-
-    def get_instant_trend(self, stock, loadHist=False, wait=True):
-        # this function analyses the instant trend
-        # it checks the direction and returns a True if it matches
-
-        self._L.info('\n\n### INSTANT TREND ANALYSIS (%s for %s) ###' % (stock.name, stock.direction))
-
-        try:
-            while True:
-                if loadHist:
-                    self.load_historical_data(stock, interval=gvars.fetchItval['little'])
-
-                # calculate the EMAs
-                ema9 = ti.ema(stock.df.close.dropna().to_numpy(), 9)
-                ema26 = ti.ema(stock.df.close.dropna().to_numpy(), 26)
-                ema50 = ti.ema(stock.df.close.dropna().to_numpy(), 50)
-
-                self._L.info(
-                    '[%s] Instant Trend EMAS = [%.2f,%.2f,%.2f]' % (stock.name, ema9[-1], ema26[-1], ema50[-1]))
-
-                # look for a buying trend
-                if (
-                        (stock.direction == gvars.BUY) and
-                        (ema9[-1] > ema26[-1]) and
-                        (ema26[-1] > ema50[-1])
-                ):
-                    self._L.info('OK: Trend going UP')
-                    return True
-
-                # look for a selling trend
-                elif (
-                        (stock.direction == gvars.SELL) and
-                        (ema9[-1] < ema26[-1]) and
-                        (ema26[-1] < ema50[-1])
-                ):
-                    self._L.info('OK: Trend going DOWN')
-                    return True
-
-                else:
-                    self._L.info('Trend not clear, waiting (%s)' % stock.direction)
-
-                    if wait:
-                        self.timeout += gvars.sleepTimes['IT']
-                        time.sleep(gvars.sleepTimes['IT'])
-
-                    return False
-
-        except Exception as e:
-            self._L.info('ERROR_IT: error at instant trend')
-            self._L.info(e)
-            block_thread(self._L, e, self.thName)
-
-    def get_rsi(self, stock, loadHist=False):
-        # this function calculates the RSI value
-
-        self._L.info('\n\n### RSI TREND ANALYSIS (%s for %s) ###' % (stock.name, stock.direction))
-
-        while True:
-            if loadHist:
-                self.load_historical_data(stock, interval=gvars.fetchItval['little'])
-
-            # calculations
-            rsi = ti.rsi(stock.df.close.values, 14)  # it uses 14 periods
-            rsi = rsi[-1]
-
-            if (stock.direction == gvars.BUY) and ((rsi > 50) and (rsi < 80)):
-                self._L.info('OK: RSI is %.2f' % rsi)
-                return True, rsi
-
-            elif (stock.direction == gvars.SELL) and ((rsi < 50) and (rsi > 20)):
-                self._L.info('OK: RSI is %.2f' % rsi)
-                return True, rsi
-
-            else:
-                self._L.info('RSI: %.0f, waiting (dir: %s)' % (rsi, stock.direction))
-
-                self.timeout += gvars.sleepTimes['RS']
-                time.sleep(gvars.sleepTimes['RS'])
-                return False
-
-    def get_stochastic(self, stock, direction, loadHist=False):
-        # this function calculates the stochastic curves
-
-        self._L.info('\n\n### STOCHASTIC TREND ANALYSIS (%s for %s) ###' % (stock.name, stock.direction))
-
-        try:
-            while True:
-                if loadHist:
-                    self.load_historical_data(stock, interval=gvars.fetchItval['little'])
-
-                # càlculs
-                stoch_k_full, stoch_d_full = ti.stoch(
-                    stock.df.high.values,
-                    stock.df.low.values,
-                    stock.df.close.values,
-                    9, 6, 9)  # parameters for the curves
-                stoch_k = stoch_k_full[-1]
-                stoch_d = stoch_d_full[-1]
-
-                # look for a buying condition
-                if (
-                        (direction == gvars.BUY) and
-                        (stoch_k > stoch_d) and
-                        ((stoch_k <= gvars.limStoch['maxBuy']) and (stoch_d <= gvars.limStoch['maxBuy']))
-                ):
-                    self._L.info('OK: k is over d: (K,D)=(%.2f,%.2f)' % (stoch_k, stoch_d))
-                    return True
-
-                # look for a selling condition
-                elif (
-                        (direction == gvars.SELL) and
-                        (stoch_k < stoch_d) and
-                        ((stoch_d >= gvars.limStoch['minSell']) and (stoch_k >= gvars.limStoch['minSell']))
-                ):
-                    self._L.info('OK: k is under d: (K,D)=(%.2f,%.2f)' % (stoch_k, stoch_d))
-                    return True
-
-                else:
-                    self._L.info('NO: The stochastics are (K,D)=(%.2f,%.2f) for %s' % (stoch_k, stoch_d, direction))
-
-                    self.timeout += gvars.sleepTimes['ST']
-                    time.sleep(gvars.sleepTimes['ST'])
-                    return False
-
-        except Exception as e:
-            self._L.info('ERROR_GS: error when getting stochastics')
-            self._L.info(stock.df)
-            self._L.info(stock.direction)
-            self._L.info(str(e))
-            return False
 
     def enter_position_mode(self, stock, desiredPrice, sharesQty):
         # this function holds a loop taking care of the open position
@@ -543,7 +369,7 @@ class Trader:
                 # check the stochastic crossing
                 stochTurn = 0
                 self.load_historical_data(stock, interval=gvars.fetchItval['little'])
-                stochCrossed = self.get_stochastic(stock, direction=reverseDirection)
+                stochCrossed = stochastic_trend.get_stochastic(stock, direction=reverseDirection)
 
             # check if the position exists and load the price at stock.currentPrice
             if not self.check_position(stock):
@@ -602,168 +428,3 @@ class Trader:
         self._L.info('%i %s %s at %.2f DONE' % (sharesQty, stock.name, stock.direction, currentPrice))
 
         return True
-
-    ################## RUN ##################
-    def buy_run(self, stock):
-        # this is the main thread
-
-        self._L.info('\n\n\n # #  R U N N I N G   B O T ––> (%s with %s) # #\n' % (stock.name, self.thName))
-
-        if self.check_position(stock, maxAttempts=2):  # check if the position exists beforehand
-            self._L.info('There is already a position open with %s, aborting!' % stock.name)
-            return stock.name, True
-
-        if not self.is_tradable(stock.name):
-            return stock.name, True
-
-        # 1. GENERAL TREND
-        if not self.get_general_trend(stock):  # check the trend
-            return stock.name, True
-
-        if stock != gvars.BUY:
-            return stock.name, True
-
-        if not self.is_tradable(stock.name, stock.direction):  # can it be traded?
-            return stock.name, True
-
-        self.timeout = 0
-        while True:
-
-            self.load_historical_data(stock, interval=gvars.fetchItval['little'])
-
-            # 2. INSTANT TREND
-            if not self.get_instant_trend(stock):
-                continue  # restart the loop
-
-            # 3. RSI
-            if not self.get_rsi(stock):
-                continue  # restart the loop
-
-            # 4. STOCHASTIC
-            if not self.get_stochastic(stock, direction=stock.direction):
-                continue  # restart the loop
-
-            currentPrice = self.get_last_price(stock)
-            sharesQty = self.get_shares_from_equity(currentPrice)
-            if not sharesQty:  # if no money left...
-                continue  # restart the loop
-
-            self._L.info('%s %s stock at %.3f$' % (stock.direction, stock.name, currentPrice))
-
-            orderDict = {
-                'symbol': stock.name,
-                'qty': sharesQty,
-                'side': stock.direction,
-                'type': 'limit',
-                'limit_price': currentPrice
-            }
-
-            self._L.info('[%s] Current price read: %.2f' % (stock.name, currentPrice))
-
-            if not self.submitOrder(orderDict):  # check if the order has been SENT
-                self._L.info('Could not submit order, RESTARTING SEQUENCE')
-                return stock.name, False
-
-            if not self.check_position(stock):  # check if the order has EXISTS
-                self._L.info('Order did not become a position, cancelling order')
-                self.cancelOrder(self.order.id)
-                self._L.info('Order cancelled correctly')
-                return stock.name, False
-
-            try:  # go on and enter the position
-                self.enter_position_mode(stock, currentPrice, sharesQty)
-            except Exception as e:
-                self._L.info('ERROR_EP: error when entering position')
-                self._L.info(str(e))
-                block_thread(self._L, e, self.thName, stock.name)
-
-            self._L.info('\n\n##### OPERATION COMPLETED #####\n\n')
-            time.sleep(3)
-
-            try:
-                if 'YES' in self.success:
-                    self._L.info(self.success)
-                    return stock.name, False
-                else:
-                    self._L.info('Blocking asset due to bad strategy')
-                    return stock.name, True
-            except Exception as e:
-                self._L.info('ERROR_SU: failed to identify success')
-                self._L.info(str(e))
-
-    def sell_run(self, stock):
-        # this is the main thread
-
-        self._L.info('\n\n\n # #  R U N N I N G  SELL B O T ––> (%s with %s) # #\n' % (stock.name, self.thName))
-
-        # 1. GENERAL TREND
-        if not self.get_general_trend(stock):  # check the trend
-            return stock.name, True
-
-        if stock != gvars.SELL:
-            return stock.name, True
-
-        self.timeout = 0
-        while True:
-
-            self.load_historical_data(stock, interval=gvars.fetchItval['little'])
-
-            # 2. INSTANT TREND
-            if not self.get_instant_trend(stock):
-                continue  # restart the loop
-
-            # 3. RSI
-            if not self.get_rsi(stock):
-                continue  # restart the loop
-
-            # 4. STOCHASTIC
-            if not self.get_stochastic(stock, direction=stock.direction):
-                continue  # restart the loop
-
-            currentPrice = self.get_last_price(stock)
-            sharesQty = self.get_shares_from_equity(currentPrice)
-            if not sharesQty:  # if no money left...
-                continue  # restart the loop
-
-            self._L.info('%s %s stock at %.3f$' % (stock.direction, stock.name, currentPrice))
-
-            orderDict = {
-                'symbol': stock.name,
-                'qty': sharesQty,
-                'side': stock.direction,
-                'type': 'limit',
-                'limit_price': currentPrice
-            }
-
-            self._L.info('[%s] Current price read: %.2f' % (stock.name, currentPrice))
-
-            if not self.submitOrder(orderDict):  # check if the order has been SENT
-                self._L.info('Could not submit order, RESTARTING SEQUENCE')
-                return stock.name, False
-
-            if not self.check_position(stock):  # check if the order has EXISTS
-                self._L.info('Order did not become a position, cancelling order')
-                self.cancelOrder(self.order.id)
-                self._L.info('Order cancelled correctly')
-                return stock.name, False
-
-            try:  # go on and enter the position
-                self.enter_position_mode(stock, currentPrice, sharesQty)
-            except Exception as e:
-                self._L.info('ERROR_EP: error when entering position')
-                self._L.info(str(e))
-                block_thread(self._L, e, self.thName, stock.name)
-
-            self._L.info('\n\n##### OPERATION COMPLETED #####\n\n')
-            time.sleep(3)
-
-            try:
-                if 'YES' in self.success:
-                    self._L.info(self.success)
-                    return stock.name, False
-                else:
-                    self._L.info('Blocking asset due to bad strategy')
-                    return stock.name, True
-            except Exception as e:
-                self._L.info('ERROR_SU: failed to identify success')
-                self._L.info(str(e))
