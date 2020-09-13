@@ -97,12 +97,12 @@ class Trader:
         diff = entryPrice - stopLoss
         try:
             self.takeProfit = round(entryPrice + diff*gvars.gainRatio,2)
-            # llarg: si entro a 10 amb sl a 8, tp = 10 + (10-8)*2 = 14
-            # curt: si entro a 10 amb sl a 12, tp = 10 + (10-12)*2 = 6
+            # long: if I enter at 10$ with stop loss at 8$, take profit = 10$ + (10$-8$)*2 = 14
+            # short: if I enter at 10$ with stop loss at 12$, take profit = 10$ + (10$-12$)*2 = 6
         except Exception as e:
             self._L.info('ERROR_TP! Direction was not clear when setting stoploss!')
             self._L.info(e)
-            self.takeProfit = round(entryPrice + diff*gvars.hardCodedWinThreshold,2)
+            self.takeProfit = round(entryPrice + diff*1.5,2)
 
         return self.takeProfit
 
@@ -203,6 +203,8 @@ class Trader:
 
             if side is 'buy':
                 limit_price = orderDict['limit_price'] * (1+self.pctMargin)
+                # this line modifies the price that comes from the orderDict
+                # adding the needed flexibility for making sure the order goes through
             elif side is 'sell':
                 limit_price = orderDict['limit_price'] * (1-self.pctMargin)
             else:
@@ -278,7 +280,7 @@ class Trader:
         block_thread(self._L,e,self.thName,stock.name)
 
     def check_position(self,stock,maxAttempts=False):
-        # this function checks wether the position is there or not
+        # this function checks whether the position is there or not
 
         if not maxAttempts:
             maxAttempts = gvars.maxAttempts['CP']
