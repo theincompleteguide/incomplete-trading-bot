@@ -1,0 +1,5 @@
+docker/
+README.md
+__pycache__/
+venv/
+
