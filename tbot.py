@@ -118,14 +118,14 @@ def main():
     assHand = AssetHandler()
 
     # get the Alpaca account ready
-    try:
-        _L.info("Getting account")
-        check_account_ok(api) # check if it is ok to trade
-        account = api.get_account()
-        clean_open_orders(api) # clean all the open orders
-        _L.info("Got it")
-    except Exception as e:
-        _L.info(str(e))
+    # try:
+    _L.info("Getting account")
+    check_account_ok(api) # check if it is ok to trade
+    account = api.get_account()
+    clean_open_orders(api) # clean all the open orders
+    _L.info("Got it")
+    # except Exception as e:
+    #     _L.info(str(e))
 
     for thread in range(gvars.MAX_WORKERS): # this will launch the threads
         worker = 'th' + str(thread) # establishing each worker name

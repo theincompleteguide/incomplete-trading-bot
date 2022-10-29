@@ -88,22 +88,26 @@ class Bars(list):
             }
             df.columns = [alias[c] for c in df.columns]
             df.set_index('time', inplace=True)
+            print(df.to_json())
             if not df.empty:
                 df.index = pd.to_datetime(
-                    (df.index * 1e9).astype('int64'), utc=True,
+                    (df.index * int(1e9)), utc=True,
                 ).tz_convert(NY)
             else:
                 df.index = pd.to_datetime(
                     df.index, utc=True
                 )
+            print(df)
             self._df = df
         return self._df
 
 
 class BarSet(dict):
     def __init__(self, raw):
-        for symbol in raw:
-            self[symbol] = Bars(raw[symbol])
+        # print(raw)
+        if raw is not None:
+            for symbol in raw:
+                self[symbol] = Bars(raw[symbol])
         self._raw = raw
 
     @property
@@ -112,10 +116,13 @@ class BarSet(dict):
         if not hasattr(self, '_df'):
             dfs = []
             for symbol, bars in self.items():
+                # print(symbol, bars)
                 df = bars.df.copy()
+                print(df)
                 df.columns = pd.MultiIndex.from_product(
                     [[symbol, ], df.columns])
                 dfs.append(df)
+            print(dfs)
             if len(dfs) == 0:
                 self._df = pd.DataFrame()
             else:

@@ -82,10 +82,12 @@ class REST(object):
         base_url=None,
         api_version=None
     ):
+        print(path, data)
         base_url = base_url or self._base_url
         version = api_version if api_version else self._api_version
         url = base_url + '/' + version + path
         headers = {}
+        print(url, headers)
         if self._oauth:
             headers['Authorization'] = 'Bearer ' + self._oauth
         else:
@@ -142,6 +144,7 @@ class REST(object):
             else:
                 raise
         if resp.text != '':
+            # print(resp.json())
             return resp.json()
         return None
 
@@ -160,7 +163,7 @@ class REST(object):
     def data_get(self, path, data=None):
         base_url = get_data_url()
         return self._request(
-            'GET', path, data, base_url=base_url, api_version='v1'
+            'GET', path, data, base_url=base_url, api_version='v2/stocks'
         )
 
     def get_account(self):
@@ -326,9 +329,7 @@ class REST(object):
         '''
         if not isinstance(symbols, str):
             symbols = ','.join(symbols)
-        params = {
-            'symbols': symbols,
-        }
+        params = {}
         if limit is not None:
             params['limit'] = limit
         if start is not None:
@@ -339,7 +340,9 @@ class REST(object):
             params['after'] = after
         if until is not None:
             params['until'] = until
-        resp = self.data_get('/bars/{}'.format(timeframe), params)
+        params['timeframe'] = timeframe
+        resp = self.data_get('/'+symbols+'/bars',params)
+        # print(resp)
         return BarSet(resp)
 
     def get_clock(self):

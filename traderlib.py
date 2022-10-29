@@ -128,7 +128,7 @@ class Trader:
         while True:
             try: # fetch the data
                 if interval is '30Min':
-                    df = self.alpaca.get_barset(stock.name, '5Min', limit).df[stock.name]
+                    df = self.alpaca.get_barset(stock.name, '5Min', limit, '2022-10-19T0:00:00Z', '2022-10-20T11:00:00Z').df[stock.name]
                     stock.df = df.resample('30min').agg({
                                         'open':'first',
                                         'high':'max',
@@ -138,12 +138,13 @@ class Trader:
                                         })
 
                 else:
-                    stock.df = self.alpaca.get_barset(stock.name, interval, limit).df[stock.name]
+                    stock.df = self.alpaca.get_barset(stock.name, interval, limit, '2022-10-19T0:00:00Z', '2022-10-20T11:00:00Z').df[stock.name]
 
             except Exception as e:
                 self._L.info('WARNING_HD: Could not load historical data, retrying')
+                print(e)
                 self._L.info(e)
-                time.sleep(gvars.sleepTimes['LH'])
+                # time.sleep(gvars.sleepTimes['LH'])
 
             try: # check if the data is updated
 
