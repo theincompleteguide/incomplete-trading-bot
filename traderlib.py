@@ -10,7 +10,7 @@ import numpy as np
 import tulipy as ti
 import os, time, threading, pytz
 import pandas as pd
-
+import pdb
 from datetime import datetime, timezone, timedelta
 from other_functions import *
 from math import ceil
@@ -127,8 +127,11 @@ class Trader:
         attempt = 1
         while True:
             try: # fetch the data
+                # pdb.set_trace()
                 if interval is '30Min':
-                    df = self.alpaca.get_barset(stock.name, '5Min', limit, '2022-10-19T0:00:00Z', '2022-10-20T11:00:00Z').df[stock.name]
+                    df = self.alpaca.get_barset(stock.name, '5Min', limit).df[stock.name]
+                    if df is None:
+                        continue
                     stock.df = df.resample('30min').agg({
                                         'open':'first',
                                         'high':'max',
@@ -138,7 +141,9 @@ class Trader:
                                         })
 
                 else:
-                    stock.df = self.alpaca.get_barset(stock.name, interval, limit, '2022-10-19T0:00:00Z', '2022-10-20T11:00:00Z').df[stock.name]
+                    stock.df = self.alpaca.get_barset(stock.name, interval, limit).df[stock.name]
+                    if stock.df is None:
+                        continue
 
             except Exception as e:
                 self._L.info('WARNING_HD: Could not load historical data, retrying')
@@ -147,7 +152,7 @@ class Trader:
                 # time.sleep(gvars.sleepTimes['LH'])
 
             try: # check if the data is updated
-
+                # pdb.set_trace()
                 lastEntry = stock.df.last('5Min').index[0] # entrada (vela) dels últims 5min
                 lastEntry = lastEntry.tz_convert('utc')
                 nowTimeDelta = datetime.now(timezone.utc) # ara - 5min
@@ -157,7 +162,9 @@ class Trader:
                 if diff <= timedeltaItv:
                     stock.lastTimeStamp = lastEntry
                     return stock.df
-                else:
+                if diff > timedeltaItv:
+                    print(diff, timedeltaItv)
+                    # pdb.set_trace()
                     if gvars.maxAttempts['LHD1'] >= attempt >= gvars.maxAttempts['LHD2']:
                         self._L.info('Fetching data, but it is taking a while (%d)...' % attempt)
                         self._L.info('Last entry    : ' + str(lastEntry))
@@ -315,7 +322,7 @@ class Trader:
                 ema9 = ti.ema(stock.df.close.dropna().to_numpy(), 9)
                 ema26 = ti.ema(stock.df.close.dropna().to_numpy(), 26)
                 ema50 = ti.ema(stock.df.close.dropna().to_numpy(), 50)
-
+                # pdb.set_trace()
                 self._L.info('[GT %s] Current: EMA9: %.3f // EMA26: %.3f // EMA50: %.3f' % (stock.name,ema9[-1],ema26[-1],ema50[-1]))
 
                 # check the buying trend
@@ -328,7 +335,7 @@ class Trader:
                 elif (ema9[-1] < ema26[-1]) and (ema26[-1] < ema50[-1]):
                     self._L.info('OK: Trend going DOWN')
                     stock.direction = 'sell'
-                    return True
+                    return True 
 
                 elif timeout >= gvars.timeouts['GT']:
                     self._L.info('This asset is not interesting (timeout)')
@@ -339,6 +346,7 @@ class Trader:
 
                     timeout += gvars.sleepTimes['GT']
                     time.sleep(gvars.sleepTimes['GT'])
+                # pdb.set_trace()
 
         except Exception as e:
             self._L.info('ERROR_GT: error at general trend')
@@ -402,7 +410,7 @@ class Trader:
                         time.sleep(gvars.sleepTimes['IT'])
 
                     return False
-
+                # pdb.set_trace()
         except Exception as e:
             self._L.info('ERROR_IT: error at instant trend')
             self._L.info(e)
@@ -616,7 +624,7 @@ class Trader:
 
         self.timeout = 0
         while True:
-
+            # pdb.set_trace()
             self.load_historical_data(stock,interval=gvars.fetchItval['little'])
 
             # 2. INSTANT TREND

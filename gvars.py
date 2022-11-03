@@ -7,7 +7,7 @@
 from pathlib import Path
 from datetime import datetime
 
-MAX_WORKERS = 1 # max threads at a time
+MAX_WORKERS = 100 # max threads at a time
 
 gainRatio = 1.5 # takeProfit = -stopLoss*gainRatio
 stopLossMargin = 0.05 # extra margin for the stop loss
@@ -44,7 +44,7 @@ limStoch = {
 ################################################################ TIMEFRAMES ->
 # fetch historical data intervals
 fetchItval = {
-            'little':'5Min',
+            'little':'25Min',
             'big':'30Min'
             }
 
@@ -58,10 +58,10 @@ sleepTimes = {
                 'GT': 10*60, # general trend
                 'IT': 2*60, # instant trend
                 'RS': 60, # RSI
-                'ST': 60, # stochastic every minut
+                'ST': 10, # stochastic every minut
                 'CO': 10, # check order every 10 seconds
                 'SO': 5, # submit order every 5 seconds
-                'LH': 5, # load_historical_data
+                'LH': 20, # load_historical_data
                 'PF': 10, # price fetch (current price)
                 'CP': 10, # check position, to check if it entered
                 'GS': 60, # get slope inside enter position

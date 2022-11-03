@@ -2,7 +2,7 @@ import logging
 import os
 import requests
 from requests.exceptions import HTTPError
-import time
+import time,pdb
 from .common import (
     get_base_url,
     get_data_url,
@@ -82,12 +82,12 @@ class REST(object):
         base_url=None,
         api_version=None
     ):
-        print(path, data)
+        # print(path, data)
         base_url = base_url or self._base_url
         version = api_version if api_version else self._api_version
         url = base_url + '/' + version + path
         headers = {}
-        print(url, headers)
+        # print(url, headers)
         if self._oauth:
             headers['Authorization'] = 'Bearer ' + self._oauth
         else:
@@ -130,9 +130,19 @@ class REST(object):
         Returns the body json in the 200 status.
         '''
         retry_codes = self._retry_codes
-        resp = self._session.request(method, url, **opts)
+        # while True:
+        # print(opts, url)
         try:
+            resp = self._session.request(method, url, **opts)
             resp.raise_for_status()
+            # while('next_page_token' in resp.json()):
+            #     opts['page_token'] = resp.json()['next_page_token']
+            #     resp1 = self._session.request(method, url, **opts)
+            #     resp1.raise_for_status()
+            #     resp.bars.update(resp1.bars)
+            #     resp = resp1
+            # resp.raise_for_status()
+            # pdb.set_trace()
         except HTTPError as http_error:
             # retry if we hit Rate Limit
             if resp.status_code in retry_codes and retry > 0:
@@ -205,7 +215,7 @@ class REST(object):
         if params is None:
             params = dict()
         if limit is not None:
-            params['limit'] = limit
+            params['limit'] = 10000
         if after is not None:
             params['after'] = after
         if until is not None:
@@ -331,7 +341,7 @@ class REST(object):
             symbols = ','.join(symbols)
         params = {}
         if limit is not None:
-            params['limit'] = limit
+            params['limit'] = 10000
         if start is not None:
             params['start'] = start
         if end is not None:
@@ -342,7 +352,10 @@ class REST(object):
             params['until'] = until
         params['timeframe'] = timeframe
         resp = self.data_get('/'+symbols+'/bars',params)
-        # print(resp)
+        # print("resp",resp)
+        if resp['bars'] is None:
+            return None
+        # pdb.set_trace()
         return BarSet(resp)
 
     def get_clock(self):

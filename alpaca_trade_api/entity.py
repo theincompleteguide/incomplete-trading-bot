@@ -1,6 +1,7 @@
 import pandas as pd
 import pprint
 import re
+import pdb
 
 ISO8601YMD = re.compile(r'\d{4}-\d{2}-\d{2}T')
 NY = 'America/New_York'
@@ -69,12 +70,16 @@ class Bar(Entity):
 
 class Bars(list):
     def __init__(self, raw):
+        # pdb.set_trace()
+        # print("hello", raw)
+        # if isinstance(raw,list):
         super().__init__([Bar(o) for o in raw])
         self._raw = raw
 
     @property
     def df(self):
         if not hasattr(self, '_df'):
+            # pdb.set_trace()
             df = pd.DataFrame(
                 self._raw, columns=('t', 'o', 'h', 'l', 'c', 'v'),
             )
@@ -86,18 +91,14 @@ class Bars(list):
                 'c': 'close',
                 'v': 'volume',
             }
+
             df.columns = [alias[c] for c in df.columns]
             df.set_index('time', inplace=True)
-            print(df.to_json())
-            if not df.empty:
-                df.index = pd.to_datetime(
-                    (df.index * int(1e9)), utc=True,
-                ).tz_convert(NY)
-            else:
-                df.index = pd.to_datetime(
-                    df.index, utc=True
-                )
-            print(df)
+            # print(df.to_json())
+            df.index = pd.to_datetime(
+                df.index, utc=True
+            )
+            # print(df)
             self._df = df
         return self._df
 
@@ -105,9 +106,13 @@ class Bars(list):
 class BarSet(dict):
     def __init__(self, raw):
         # print(raw)
-        if raw is not None:
-            for symbol in raw:
-                self[symbol] = Bars(raw[symbol])
+        # pdb.set_trace()
+        for symbol in raw:
+            self['symbol'] = raw['symbol']
+            if not self.get(raw['symbol']):
+                self[raw['symbol']] = {}
+            self[raw['symbol']]['bars'] = Bars(raw['bars'])
+        # self = raw
         self._raw = raw
 
     @property
@@ -115,14 +120,18 @@ class BarSet(dict):
         '''## Experimental '''
         if not hasattr(self, '_df'):
             dfs = []
-            for symbol, bars in self.items():
-                # print(symbol, bars)
-                df = bars.df.copy()
-                print(df)
-                df.columns = pd.MultiIndex.from_product(
-                    [[symbol, ], df.columns])
-                dfs.append(df)
-            print(dfs)
+            # print("error", self)
+            # for symbol in self:
+            # print("data", symbol)
+            symbol = self['symbol']
+            df1 = self[symbol]['bars'].df.copy()
+            # pdb.set_trace()
+            # df = df[~df.index.duplicated()]
+            # print(df1)
+            df1.columns = pd.MultiIndex.from_product(
+                [[symbol, ], df1.columns])
+            dfs.append(df1)
+            # print(dfs)
             if len(dfs) == 0:
                 self._df = pd.DataFrame()
             else:
