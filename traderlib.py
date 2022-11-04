@@ -75,16 +75,17 @@ class Trader:
         #this function takes a price as a input and sets the stoploss there
 
         try:
+            # pdb.set_trace()
             if direction is 'buy':
-                self.stopLoss = float(stopLoss - stopLoss*gvars.stopLossMargin)
+                self.stopLoss = float((stopLoss - stopLoss*gvars.stopLossMargin)[-1])
             elif direction is 'sell':
-                self.stopLoss = float(stopLoss + stopLoss*gvars.stopLossMargin)
+                self.stopLoss = float((stopLoss + stopLoss*gvars.stopLossMargin)[-1])
             else:
                 raise ValueError
         except Exception as e:
             self._L.info('ERROR_SL! Direction was not clear when setting stoploss!')
             self._L.info(str(e))
-            self.stopLoss = float(stopLoss)
+            self.stopLoss = float(stopLoss[-1])
 
         self._L.info('StopLoss set at %.2f' % self.stopLoss)
 
@@ -118,7 +119,7 @@ class Trader:
             sharesQty = int(self.operEquity/assetPrice)
             return sharesQty
 
-    def load_historical_data(self,stock,interval='1Min',limit=100):
+    def load_historical_data(self,stock,interval='1Min',limit=100, last=False):
         # this function fetches the data from Alpaca
         # it is important to check whether is updated or not
 
@@ -154,6 +155,11 @@ class Trader:
             try: # check if the data is updated
                 # pdb.set_trace()
                 lastEntry = stock.df.last('5Min').index[0] # entrada (vela) dels últims 5min
+                if last:
+                    # pdb.set_trace()
+                    return stock.df.close[-1]
+                    
+                    print(stock)
                 lastEntry = lastEntry.tz_convert('utc')
                 nowTimeDelta = datetime.now(timezone.utc) # ara - 5min
 
@@ -358,8 +364,8 @@ class Trader:
 
         while True:
             try:
-                lastPrice = self.load_historical_data(stock,interval='1Min',limit=1)
-                stock.lastPrice = float(lastPrice.close)
+                lastPrice = self.load_historical_data(stock,interval='5Min',limit=1,last=True)
+                stock.lastPrice = float(lastPrice)
                 self._L.info('Last price read ALPACA    : ' + str(stock.lastPrice))
                 return stock.lastPrice
             except:
@@ -424,7 +430,8 @@ class Trader:
         while True:
             if loadHist:
                 self.load_historical_data(stock,interval=gvars.fetchItval['little'])
-
+            
+            # pdb.set_trace()
             # calculations
             rsi = ti.rsi(stock.df.close.values, 14) # it uses 14 periods
             rsi = rsi[-1]
@@ -461,6 +468,7 @@ class Trader:
                                     stock.df.low.values,
                                     stock.df.close.values,
                                     9, 6, 9) # parameters for the curves
+                # pdb.set_trace()
                 stoch_k = stoch_k_full[-1]
                 stoch_d = stoch_d_full[-1]
 
@@ -493,6 +501,7 @@ class Trader:
             self._L.info('ERROR_GS: error when getting stochastics')
             self._L.info(stock.df)
             self._L.info(stock.direction)
+            pdb.set_trace()
             self._L.info(str(e))
             return False
 
@@ -608,9 +617,9 @@ class Trader:
 
         self._L.info('\n\n\n # #  R U N N I N G   B O T ––> (%s with %s) # #\n' % (stock.name,self.thName))
 
-        if self.check_position(stock,maxAttempts=2): # check if the position exists beforehand
-            self._L.info('There is already a position open with %s, aborting!' % stock.name)
-            return stock.name,True
+        # if self.check_position(stock,maxAttempts=2): # check if the position exists beforehand
+        #     self._L.info('There is already a position open with %s, aborting!' % stock.name)
+        #     return stock.name,True
 
         if not self.is_tradable(stock.name):
             return stock.name,True
@@ -638,7 +647,7 @@ class Trader:
             # 4. STOCHASTIC
             if not self.get_stochastic(stock,direction=stock.direction):
                 continue # restart the loop
-
+            # pdb.set_trace()
             currentPrice = self.get_last_price(stock)
             sharesQty = self.get_shares_from_equity(currentPrice)
             if not sharesQty: # if no money left...

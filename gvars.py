@@ -37,15 +37,15 @@ maxAttempts = {
 
 # limit for the indicators
 limStoch = {
-            'maxBuy':75, # max allowed value to buy
-            'minSell':25  # min allowed value to sell
+            'maxBuy':1000, # max allowed value to buy
+            'minSell':100  # min allowed value to sell
             }
 
 ################################################################ TIMEFRAMES ->
 # fetch historical data intervals
 fetchItval = {
-            'little':'25Min',
-            'big':'30Min'
+            'little':'20Min',
+            'big':'50Min'
             }
 
 # timeouts that will kill a process
@@ -57,7 +57,7 @@ timeouts = {
 sleepTimes = {
                 'GT': 10*60, # general trend
                 'IT': 2*60, # instant trend
-                'RS': 60, # RSI
+                'RS': 10, # RSI
                 'ST': 10, # stochastic every minut
                 'CO': 10, # check order every 10 seconds
                 'SO': 5, # submit order every 5 seconds

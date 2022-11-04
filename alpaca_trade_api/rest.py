@@ -239,7 +239,7 @@ class REST(object):
             'time_in_force': time_in_force,
         }
         if limit_price is not None:
-            params['limit_price'] = limit_price
+            params['limit_price'] = round(limit_price,2)
         if stop_price is not None:
             params['stop_price'] = stop_price
         if client_order_id is not None:
@@ -354,6 +354,7 @@ class REST(object):
         resp = self.data_get('/'+symbols+'/bars',params)
         # print("resp",resp)
         if resp['bars'] is None:
+            print('none')
             return None
         # pdb.set_trace()
         return BarSet(resp)

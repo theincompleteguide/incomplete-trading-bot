@@ -127,13 +127,20 @@ def main():
     # except Exception as e:
     #     _L.info(str(e))
 
-    for thread in range(gvars.MAX_WORKERS): # this will launch the threads
-        worker = 'th' + str(thread) # establishing each worker name
+    time = datetime.now(pytz.timezone('America/New_York'))
+    # TODO set cron in deployment
+    if time.hour > 10 and time.hour < 16 and time.today().strftime('%A') not in ['Saturday', 'Sunday']:
 
-        worker = threading.Thread(name=worker,target=run_tbot,args=(_L,assHand,account))
-        worker.start() # it runs a run_tbot function, declared here as well
+        for thread in range(gvars.MAX_WORKERS): # this will launch the threads
+            worker = 'th' + str(thread) # establishing each worker name
 
-        time.sleep(1)
+            worker = threading.Thread(name=worker,target=run_tbot,args=(_L,assHand,account))
+            worker.start() # it runs a run_tbot function, declared here as well
+
+            time.sleep(1)
+    else:
+        print('Markets are closed check back on Monday')
+        
 
 if __name__ == '__main__':
     main()
