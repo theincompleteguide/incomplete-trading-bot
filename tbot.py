@@ -1,9 +1,5 @@
 # encoding: utf-8
 
-# This code is free, THANK YOU!
-# It is explained at the guide you can find at www.theincompleteguide.com
-# You will also find improvement ideas and explanations
-
 from stocklib import *
 from traderlib import *
 from other_functions import *
@@ -127,19 +123,20 @@ def main():
     # except Exception as e:
     #     _L.info(str(e))
 
-    time = datetime.now(pytz.timezone('America/New_York'))
+    # time = datetime.now(pytz.timezone('America/New_York'))
+    # print(time.hour)
     # TODO set cron in deployment
-    if time.hour > 10 and time.hour < 16 and time.today().strftime('%A') not in ['Saturday', 'Sunday']:
+    # if time.hour >= 10 and time.hour <  16 and (time.today().strftime('%A') not in ['Saturday', 'Sunday']):
 
-        for thread in range(gvars.MAX_WORKERS): # this will launch the threads
-            worker = 'th' + str(thread) # establishing each worker name
+    for thread in range(gvars.MAX_WORKERS): # this will launch the threads
+        worker = 'th' + str(thread) # establishing each worker name
 
-            worker = threading.Thread(name=worker,target=run_tbot,args=(_L,assHand,account))
-            worker.start() # it runs a run_tbot function, declared here as well
+        worker = threading.Thread(name=worker,target=run_tbot,args=(_L,assHand,account))
+        worker.start() # it runs a run_tbot function, declared here as well
 
-            time.sleep(1)
-    else:
-        print('Markets are closed check back on Monday')
+        time.sleep(1)
+    # else:
+    #     print('Markets are closed check back on Monday')
         
 
 if __name__ == '__main__':

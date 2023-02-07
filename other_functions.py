@@ -1,9 +1,5 @@
 # encoding: utf-8
 
-# This code is free, THANK YOU!
-# It is explained at the guide you can find at www.theincompleteguide.com
-# You will also find improvement ideas and explanations
-
 import pandas as pd
 import csv, json, time
 import os.path

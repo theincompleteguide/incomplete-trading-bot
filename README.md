@@ -1,6 +1,9 @@
-# incomplete-trading-bot
- More at www.theincompleteguide.com
+# vegas-bot
 
- This code is free, THANK YOU!
- It is explained at the guide you can find at www.theincompleteguide.com
- You will also find improvement ideas and explanations
+polygon integrating pending
+
+resistance support patterns
+
+To be deployed on FPGA instance 
+
+Errors on data retrieval use polygon subscription

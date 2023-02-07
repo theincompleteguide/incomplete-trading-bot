@@ -1,13 +1,9 @@
 # encoding: utf-8
 
-# This code is free, THANK YOU!
-# It is explained at the guide you can find at www.theincompleteguide.com
-# You will also find improvement ideas and explanations
-
 from pathlib import Path
 from datetime import datetime
 
-MAX_WORKERS = 100 # max threads at a time
+MAX_WORKERS = 1000 # max threads at a time
 
 gainRatio = 1.5 # takeProfit = -stopLoss*gainRatio
 stopLossMargin = 0.05 # extra margin for the stop loss
