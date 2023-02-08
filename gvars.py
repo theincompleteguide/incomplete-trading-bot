@@ -7,7 +7,7 @@
 from pathlib import Path
 from datetime import datetime
 
-MAX_WORKERS = 10 # max threads at a time
+MAX_WORKERS = 20 # max threads at a time
 
 gainRatio = 1.5 # takeProfit = -stopLoss*gainRatio
 stopLossMargin = 0.05 # extra margin for the stop loss
@@ -16,8 +16,8 @@ operEquity = 10000 # defines the target amount per execution ($)
 limitOrderMargin = 0.1 # percentage that defines the offset for the limit orders
 
 # YOUR API KEYS AT ALPACA GO HERE!
-API_KEY = ""
-API_SECRET_KEY = ""
+API_KEY = "PKPAC5J99GX3RV82B66S"
+API_SECRET_KEY = "lbYutjJ5y8TNyq5MwQZmZqRSp3VeebgCdpLuYdXz"
 ALPACA_API_URL = "https://paper-api.alpaca.markets"
 
 # this block checks whether you have your keys written or not
