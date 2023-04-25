@@ -11,7 +11,6 @@ import threading, os, logging
 from datetime import datetime
 import gvars
 from assetHandler import AssetHandler
-from pytz import timezone
 
 # Global object we log to; the handler will work with any log message
 _L = logging.getLogger("demo")
@@ -59,13 +58,14 @@ class MultiHandler(logging.Handler):
 
 def clean_open_orders(api):
     # First, cancel any existing orders so they don't impact our buying power.
-    orders = api.list_orders(status="open")
+    orders_filter = GetOrdersRequest( status = QueryOrderStatus.OPEN )
+    orders = api.get_orders( orders_filter )
 
     print('\nCLEAR ORDERS')
     print('%i orders were found open' % int(len(orders)))
 
     for order in orders:
-      api.cancel_order(order.id)
+      api.cancel_order_by_id(order.id)
 
 def check_account_ok(api):
 
@@ -75,10 +75,10 @@ def check_account_ok(api):
         print('OJO, account blocked. WTF?')
         import pdb; pdb.set_trace()
 
-def run_tbot(_L,assHand,account):
+def run_tbot( _L, assHand ):
 
     # initialize trader object
-    trader = Trader(gvars.API_KEY, gvars.API_SECRET_KEY, _L, account)
+    trader = Trader( gvars.API_KEY, gvars.API_SECRET_KEY, _L )
 
     while True:
 
@@ -112,7 +112,7 @@ def main():
     _L.info('Max workers allowed: ' + str(gvars.MAX_WORKERS))
 
     # initialize the API with Alpaca
-    api = tradeapi.REST(gvars.API_KEY, gvars.API_SECRET_KEY, gvars.ALPACA_API_URL, api_version='v2')
+    api = TradingClient( gvars.API_KEY, gvars.API_SECRET_KEY, url_override=gvars.ALPACA_API_URL )
 
     # initialize the asset handler
     assHand = AssetHandler()
@@ -130,7 +130,7 @@ def main():
     for thread in range(gvars.MAX_WORKERS): # this will launch the threads
         worker = 'th' + str(thread) # establishing each worker name
 
-        worker = threading.Thread(name=worker,target=run_tbot,args=(_L,assHand,account))
+        worker = threading.Thread( name=worker, target=run_tbot, args=( _L, assHand ) )
         worker.start() # it runs a run_tbot function, declared here as well
 
         time.sleep(1)

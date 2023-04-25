@@ -7,9 +7,7 @@
 import pandas as pd
 from datetime import datetime
 from datetime import timedelta
-import time, threading, requests, re, random, os
-import other_functions
-from bs4 import BeautifulSoup
+import time, threading, random
 from other_functions import *
 import gvars
 
@@ -77,7 +75,7 @@ class AssetHandler:
 
         print('\nUnlocking service initialized')
         while True:
-            print('\n# # # Unlocking assets # # #\n')
+            print('\n# # # Unlocking assets # # #\n')
             time_before = datetime.now()-timedelta(minutes=30)
 
 
