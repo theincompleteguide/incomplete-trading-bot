@@ -4,17 +4,10 @@
 # It is explained at the guide you can find at www.theincompleteguide.com
 # You will also find improvement ideas and explanations
 
-import pandas as pd
-import csv, json, time
+import json, time
 import os.path
 from datetime import datetime
-from shutil import copyfile
-from scipy.stats import linregress
-import numpy as np
 import gvars
-import requests
-from bs4 import BeautifulSoup
-import tulipy as ti
 
 def block_thread(logger=False,exception=False,thName='',assName=''):
     # this function will lock the thread visually, in case a fatal error happened
@@ -53,7 +46,7 @@ def million_to_float(string,scale=False):
         elif 'N/A' in string:
             string = 0
 
-        if scale is 'million':
+        if scale == 'million':
             string = float(string)/1000000
         else:
             string = float(string)

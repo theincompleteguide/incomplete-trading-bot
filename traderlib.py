@@ -4,27 +4,32 @@
 # It is explained at the guide you can find at www.theincompleteguide.com
 # You will also find improvement ideas and explanations
 
-import alpaca_trade_api as tradeapi
+from alpaca.trading.client import TradingClient
+from alpaca.trading.requests import LimitOrderRequest, MarketOrderRequest, GetOrdersRequest
+from alpaca.trading.enums import QueryOrderStatus, OrderSide, OrderType, TimeInForce
+from alpaca.data.historical.stock import StockHistoricalDataClient
+from alpaca.data.requests import StockBarsRequest
+from alpaca.data.timeframe import TimeFrame, TimeFrameUnit
 
-import numpy as np
 import tulipy as ti
-import os, time, threading, pytz
-import pandas as pd
+import time, threading
+import pytz
 
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timedelta, timezone
 from other_functions import *
 from math import ceil
 
 class Trader:
-    def __init__(self, API_KEY, API_SECRET_KEY, _L, account):
+    def __init__( self, API_KEY, API_SECRET_KEY, _L ):
         self._L = _L
         self.thName = threading.currentThread().getName()
 
         try:
             self.API_KEY = API_KEY
             self.API_SECRET_KEY = API_SECRET_KEY
-            self.ALPACA_API_URL = "https://paper-api.alpaca.markets"
-            self.alpaca = tradeapi.REST(self.API_KEY, self.API_SECRET_KEY, self.ALPACA_API_URL, api_version='v2') # or use ENV Vars
+            self.ALPACA_API_URL = gvars.ALPACA_API_URL
+            self.alpaca = TradingClient( self.API_KEY, self.API_SECRET_KEY, url_override=self.ALPACA_API_URL ) # or use ENV Vars
+            self.bars = StockHistoricalDataClient( self.API_KEY, self.API_SECRET_KEY )
 
         except Exception as e:
             self._L.info('ERROR_IN: error when initializing: ' + str(e))
@@ -44,10 +49,10 @@ class Trader:
                 return False
             else:
                 if direction:
-                    if (direction is 'sell') and (not asset.shortable):
+                    if (direction == OrderSide.SELL) and (not asset.shortable):
                         self._L.info('%s is not shortable, locking it' % ticker)
                         return False
-                    elif (direction is 'buy') and (not asset.tradable):
+                    elif (direction == OrderSide.BUY) and (not asset.tradable):
                         self._L.info('%s is not tradable, locking it' % ticker)
                         return False
 
@@ -66,7 +71,7 @@ class Trader:
         self._L.info('#\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t#')
         self._L.info('#\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t#')
         self._L.info('#\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t#')
-        self._L.info('# O R D E R   S U B M I T T E D       ')
+        self._L.info('# O R D E R   S U B M I T T E D       ')
         self._L.info('#\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t#')
         self._L.info('#\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t#')
         self._L.info('#\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t#')
@@ -75,9 +80,9 @@ class Trader:
         #this function takes a price as a input and sets the stoploss there
 
         try:
-            if direction is 'buy':
+            if direction == OrderSide.BUY:
                 self.stopLoss = float(stopLoss - stopLoss*gvars.stopLossMargin)
-            elif direction is 'sell':
+            elif direction == OrderSide.SELL:
                 self.stopLoss = float(stopLoss + stopLoss*gvars.stopLossMargin)
             else:
                 raise ValueError
@@ -118,17 +123,22 @@ class Trader:
             sharesQty = int(self.operEquity/assetPrice)
             return sharesQty
 
-    def load_historical_data(self,stock,interval='1Min',limit=100):
+    def load_historical_data( self, stock, interval=TimeFrame.Minute, limit=100 ):
         # this function fetches the data from Alpaca
         # it is important to check whether is updated or not
 
-        timedeltaItv = ceil(int(interval.strip('Min')) * 1.5) # 150% de l'interval, per si de cas
+        timedeltaItv = ceil( interval.amount * 1.5) # 150% de l'interval, per si de cas
+
+        limit += 1  # to retrieve all the amount of data we want
 
         attempt = 1
         while True:
             try: # fetch the data
-                if interval is '30Min':
-                    df = self.alpaca.get_barset(stock.name, '5Min', limit).df[stock.name]
+                if interval.value == '30Min':
+                    interval = TimeFrame(5, TimeFrameUnit.Minute)  # 5 minutes
+                    start_time = datetime.now( timezone.utc ) - timedelta( minutes = interval.amount * limit )  # to retrieve the latest data
+                    bars_params = StockBarsRequest( symbol_or_symbols=stock.name, timeframe=interval, limit=limit, start=start_time )
+                    df = self.bars.get_stock_bars( bars_params ).df.reset_index( level=['symbol'] )
                     stock.df = df.resample('30min').agg({
                                         'open':'first',
                                         'high':'max',
@@ -138,7 +148,9 @@ class Trader:
                                         })
 
                 else:
-                    stock.df = self.alpaca.get_barset(stock.name, interval, limit).df[stock.name]
+                    start_time = datetime.now( timezone.utc ) - timedelta( minutes = interval.amount * limit )  # to retrieve the latest data
+                    bars_params = StockBarsRequest( symbol_or_symbols=stock.name, timeframe=interval, limit=limit, start=start_time )
+                    stock.df = self.bars.get_stock_bars( bars_params ).df.reset_index( level=['symbol'] )
 
             except Exception as e:
                 self._L.info('WARNING_HD: Could not load historical data, retrying')
@@ -147,17 +159,17 @@ class Trader:
 
             try: # check if the data is updated
 
-                lastEntry = stock.df.last('5Min').index[0] # entrada (vela) dels últims 5min
+                lastEntry = stock.df.index[-1]  # last timestamp entry
                 lastEntry = lastEntry.tz_convert('utc')
                 nowTimeDelta = datetime.now(timezone.utc) # ara - 5min
 
-                diff = (lastEntry.replace(tzinfo=None) - nowTimeDelta.replace(tzinfo=None)).total_seconds()
+                diff = ( nowTimeDelta.replace(tzinfo=None) - lastEntry.replace(tzinfo=None) ).total_seconds()
                 diff = int(abs(diff)/60) # min
                 if diff <= timedeltaItv:
                     stock.lastTimeStamp = lastEntry
                     return stock.df
                 else:
-                    if gvars.maxAttempts['LHD1'] >= attempt >= gvars.maxAttempts['LHD2']:
+                    if gvars.maxAttempts['LHD1'] <= attempt <= gvars.maxAttempts['LHD2']:
                         self._L.info('Fetching data, but it is taking a while (%d)...' % attempt)
                         self._L.info('Last entry    : ' + str(lastEntry))
                         self._L.info('Current time  : ' + str(nowTimeDelta))
@@ -176,10 +188,10 @@ class Trader:
                 self._L.info(str(e))
                 time.sleep(gvars.sleepTimes['LH'])
 
-    def get_open_positions(self,assetId):
+    def get_open_positions(self, assetId):
         # this function checks wether you already have an open position with the asset
 
-        positions = self.alpaca.list_positions()
+        positions = self.alpaca.get_all_positions()
         for position in positions:
             if position.symbol == assetId:
                 return position.count(position.symbol)
@@ -195,51 +207,56 @@ class Trader:
         side = orderDict['side']
         symbol = orderDict['symbol']
         qty = orderDict['qty']
-        time_in_force = 'gtc'
+        type = orderDict['type']
+        time_in_force = TimeInForce.GTC
 
-        if orderDict['type'] is 'limit': # adjust order for a limit type
-            type = 'limit'
+        if type == OrderType.LIMIT: # adjust order for a limit type
             self._L.info('Desired limit price for limit order: %.3f$' % orderDict['limit_price'])
 
-            if side is 'buy':
+            if side == OrderSide.BUY:
                 limit_price = orderDict['limit_price'] * (1+self.pctMargin)
                 # this line modifies the price that comes from the orderDict
                 # adding the needed flexibility for making sure the order goes through
-            elif side is 'sell':
+            elif side == OrderSide.SELL:
                 limit_price = orderDict['limit_price'] * (1-self.pctMargin)
             else:
                 self._L.info('Side not identified: ' + str(side))
                 block_thread(self._L,e,self.thName)
+
+            if limit_price >= 1: limit_price = round( limit_price, 2 )  # based on api documentation
+            else: limit_price = round( limit_price, 4 )                 # ( https://alpaca.markets/docs/trading/orders/#limit-order )
+
             self._L.info('Corrected (added margin) limit price: %.3f$' % limit_price)
 
-        elif orderDict['type'] is 'market': # adjust order for a market type
-            type = 'market'
+        elif type == OrderType.MARKET: # adjust order for a market type
             self._L.info('Desired limit price for market order: %.3f$' % orderDict['limit_price'])
 
 
         attempt = 0
         while attempt < gvars.maxAttempts['SO']:
             try:
-                if type is 'limit':
-                    self.order = self.alpaca.submit_order(
-                                            side=side,
-                                            qty=qty,
-                                            type=type,
-                                            time_in_force=time_in_force,
-                                            symbol=symbol,
-                                            limit_price=limit_price)
+                if type == OrderType.LIMIT:
+                    order_request = LimitOrderRequest(
+                                        side = side,
+                                        qty = qty,
+                                        type = type,
+                                        time_in_force = time_in_force,
+                                        symbol = symbol,
+                                        limit_price = limit_price )
+                    self.order = self.alpaca.submit_order( order_request )
 
                     self._L.info("Limit order of | %d %s %s | submitted" % (qty,symbol,side))
                     self._L.info(self.order)
                     return True
 
-                elif type is 'market':
-                    self.order = self.alpaca.submit_order(
-                                            side=side,
-                                            qty=qty,
-                                            type=type,
-                                            time_in_force=time_in_force,
-                                            symbol=symbol)
+                elif type == OrderType.MARKET:
+                    order_request = MarketOrderRequest(
+                                        side = side,
+                                        qty = qty,
+                                        type = type,
+                                        time_in_force = time_in_force,
+                                        symbol = symbol )
+                    self.order = self.alpaca.submit_order( order_request )
 
                     self._L.info("Market order of | %d %s %s | submitted" % (qty,symbol,side))
                     self._L.info(self.order)
@@ -260,13 +277,14 @@ class Trader:
         attempt = 0
         while attempt < gvars.maxAttempts['CO']:
             try:
-                ordersList = self.alpaca.list_orders(status='new',limit=100)
+                orders_filter = GetOrdersRequest( status = QueryOrderStatus.ALL, limit = 100 )
+                ordersList = self.alpaca.get_orders( orders_filter )
 
                 # find the order ID and the closed status, check it matches
                 for order in ordersList:
                     if order.id == orderId:
                         self._L.info('Cancelling order for ' + order.symbol)
-                        self.alpaca.cancel_order(order.id)
+                        self.alpaca.cancel_order_by_id( order.id )
                         return True
             except Exception as e:
                 self._L.info('WARNING_CO! Failed to cancel order, trying again')
@@ -288,9 +306,9 @@ class Trader:
         attempt = 0
         while attempt < maxAttempts:
             try:
-                position = self.alpaca.get_position(stock.name)
+                position = self.alpaca.get_open_position(stock.name)
                 stock.avg_entry_price = float(position.avg_entry_price)
-                stock.currentPrice = float(self.alpaca.get_position(stock.name).current_price)
+                stock.currentPrice = float(self.alpaca.get_open_position(stock.name).current_price)
                 return True
             except:
                 time.sleep(gvars.sleepTimes['CP'])
@@ -320,13 +338,13 @@ class Trader:
                 # check the buying trend
                 if (ema9[-1] > ema26[-1]) and (ema26[-1] > ema50[-1]):
                     self._L.info('OK: Trend going UP')
-                    stock.direction = 'buy'
+                    stock.direction = OrderSide.BUY
                     return True
 
                 # check the selling trend
                 elif (ema9[-1] < ema26[-1]) and (ema26[-1] < ema50[-1]):
                     self._L.info('OK: Trend going DOWN')
-                    stock.direction = 'sell'
+                    stock.direction = OrderSide.SELL
                     return True
 
                 elif timeout >= gvars.timeouts['GT']:
@@ -349,7 +367,7 @@ class Trader:
 
         while True:
             try:
-                lastPrice = self.load_historical_data(stock,interval='1Min',limit=1)
+                lastPrice = self.load_historical_data( stock, interval=TimeFrame.Minute, limit=1 )
                 stock.lastPrice = float(lastPrice.close)
                 self._L.info('Last price read ALPACA    : ' + str(stock.lastPrice))
                 return stock.lastPrice
@@ -377,7 +395,7 @@ class Trader:
 
                 # look for a buying trend
                 if (
-                        (stock.direction == 'buy') and
+                        (stock.direction == OrderSide.BUY) and
                         (ema9[-1] > ema26[-1]) and
                         (ema26[-1] > ema50[-1])
                     ):
@@ -386,7 +404,7 @@ class Trader:
 
                 # look for a selling trend
                 elif (
-                        (stock.direction == 'sell') and
+                        (stock.direction == OrderSide.SELL) and
                         (ema9[-1] < ema26[-1]) and
                         (ema26[-1] < ema50[-1])
                     ):
@@ -420,11 +438,11 @@ class Trader:
             rsi = ti.rsi(stock.df.close.values, 14) # it uses 14 periods
             rsi = rsi[-1]
 
-            if (stock.direction == 'buy') and ((rsi>50) and (rsi<80)):
+            if (stock.direction == OrderSide.BUY) and ((rsi>50) and (rsi<80)):
                 self._L.info('OK: RSI is %.2f' % rsi)
                 return True,rsi
 
-            elif (stock.direction == 'sell') and ((rsi<50) and (rsi>20)):
+            elif (stock.direction == OrderSide.SELL) and ((rsi<50) and (rsi>20)):
                 self._L.info('OK: RSI is %.2f' % rsi)
                 return True,rsi
 
@@ -457,7 +475,7 @@ class Trader:
 
                 # look for a buying condition
                 if (
-                        (direction == 'buy') and
+                        (direction == OrderSide.BUY) and
                         (stoch_k > stoch_d) and
                         ((stoch_k <= gvars.limStoch['maxBuy']) and (stoch_d <= gvars.limStoch['maxBuy']))
                     ):
@@ -466,7 +484,7 @@ class Trader:
 
                 # look for a selling condition
                 elif (
-                        (direction == 'sell') and
+                        (direction == OrderSide.SELL) and
                         (stoch_k < stoch_d) and
                         ((stoch_d >= gvars.limStoch['minSell']) and (stoch_k >= gvars.limStoch['minSell']))
                     ):
@@ -493,18 +511,18 @@ class Trader:
 
         self._L.info('Position entered')
 
-        stock.avg_entry_price = float(self.alpaca.get_position(stock.name).avg_entry_price)
+        stock.avg_entry_price = float(self.alpaca.get_open_position(stock.name).avg_entry_price)
         ema50 = ti.ema(stock.df.close.dropna().to_numpy(), 50)
         stopLoss = self.set_stoploss(ema50,direction=stock.direction) # stoploss = EMA50
         takeProfit = self.set_takeprofit(stock.avg_entry_price,stopLoss)
 
-        if stock.direction is 'buy':
+        if stock.direction == OrderSide.BUY:
             targetGainInit = int((takeProfit-stock.avg_entry_price) * sharesQty)
-            reverseDirection = 'sell'
+            reverseDirection = OrderSide.SELL
 
-        elif stock.direction is 'sell':
+        elif stock.direction == OrderSide.SELL:
             targetGainInit = int((stock.avg_entry_price-takeProfit) * sharesQty)
-            reverseDirection = 'buy'
+            reverseDirection = OrderSide.BUY
 
         self._L.info('######################################')
         self._L.info('#    TICKER       : %s'       % stock.name)
@@ -543,16 +561,16 @@ class Trader:
                 currentPrice = stock.currentPrice
 
             # calculate current gain
-            if stock.direction is 'buy':
+            if stock.direction == OrderSide.BUY:
                 currentGain = (currentPrice - stock.avg_entry_price) * sharesQty
-            elif stock.direction is 'sell':
+            elif stock.direction == OrderSide.SELL:
                 currentGain = (stock.avg_entry_price - currentPrice) * sharesQty
 
 
             # if stop loss reached
             if (
-                    (stock.direction is 'buy' and currentPrice <= stopLoss) or
-                    (stock.direction is 'sell' and currentPrice >= stopLoss)
+                    (stock.direction == OrderSide.BUY and currentPrice <= stopLoss) or
+                    (stock.direction == OrderSide.SELL and currentPrice >= stopLoss)
                 ):
                 self._L.info('STOPLOSS reached at price %.3f' % currentPrice)
                 self.success = 'NO: STOPLOSS'
@@ -582,7 +600,7 @@ class Trader:
             orderDict = {
                         'side':reverseDirection,
                         'symbol':stock.name,
-                        'type':'market', # it is a MARKET order, now
+                        'type':OrderType.MARKET, # it is a MARKET order, now
                         'limit_price':currentPrice,
                         'qty':sharesQty
                         }
@@ -597,7 +615,7 @@ class Trader:
     def run(self,stock):
         # this is the main thread
 
-        self._L.info('\n\n\n # #  R U N N I N G   B O T ––> (%s with %s) # #\n' % (stock.name,self.thName))
+        self._L.info('\n\n\n # #  R U N N I N G   B O T --> (%s with %s) # #\n' % (stock.name,self.thName))
 
         if self.check_position(stock,maxAttempts=2): # check if the position exists beforehand
             self._L.info('There is already a position open with %s, aborting!' % stock.name)
@@ -641,7 +659,7 @@ class Trader:
                         'symbol':stock.name,
                         'qty':sharesQty,
                         'side':stock.direction,
-                        'type':'limit',
+                        'type':OrderType.LIMIT,
                         'limit_price':currentPrice
                         }
 

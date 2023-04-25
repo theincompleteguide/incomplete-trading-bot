@@ -6,6 +6,9 @@
 
 from pathlib import Path
 from datetime import datetime
+from alpaca.data.timeframe import TimeFrame, TimeFrameUnit
+from alpaca.common.enums import BaseURL
+
 
 MAX_WORKERS = 10 # max threads at a time
 
@@ -16,12 +19,12 @@ operEquity = 10000 # defines the target amount per execution ($)
 limitOrderMargin = 0.1 # percentage that defines the offset for the limit orders
 
 # YOUR API KEYS AT ALPACA GO HERE!
-API_KEY = ""
-API_SECRET_KEY = ""
-ALPACA_API_URL = "https://paper-api.alpaca.markets"
+API_KEY = "PKYCWW3124DHIFJOWMXP"
+API_SECRET_KEY = "2dCo1QZB9JzaN9ZI1R6LyJFtUevLO98CraNlQ5JC"
+ALPACA_API_URL = BaseURL.TRADING_PAPER
 
 # this block checks whether you have your keys written or not
-if API_KEY is "" or API_SECRET_KEY is "":
+if API_KEY == "" or API_SECRET_KEY == "":
     print('\n\n##### \n\nPlease get an API key at the Alpaca website! \n\n##### \n\n')
     raise ValueError
 
@@ -44,8 +47,8 @@ limStoch = {
 ################################################################ TIMEFRAMES ->
 # fetch historical data intervals
 fetchItval = {
-            'little':'5Min',
-            'big':'30Min'
+            'little': TimeFrame(5, TimeFrameUnit.Minute),
+            'big': TimeFrame(30, TimeFrameUnit.Minute)
             }
 
 # timeouts that will kill a process
